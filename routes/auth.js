@@ -1,94 +1,49 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const db = require("../db");
+const fs = require('fs');
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
-// POST /api/auth/register
-router.post("/register", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
-    }
+const DATA_FILE = path.join(__dirname, '../data/maximus.json');
 
-    const existingUser = db.get("users").find({ email }).value();
-    if (existingUser) {
-      return res.status(400).json({ message: "E-mail já cadastrado." });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash(password, salt);
-    
-    const nextId = db.get("nextUserId").value() || 1;
-    const newUser = {
-      id: nextId,
-      name: name || "Usuário",
-      email,
-      password_hash,
-      plan: "free",
-      createdAt: new Date().toISOString()
-    };
-
-    db.get("users").push(newUser).write();
-    db.set("nextUserId", nextId + 1).write();
-
-    // Criar configurações padrão do bot
-    db.get("botSettings").push({
-      userId: newUser.id,
-      stake: 10,
-      asset: "EURUSD",
-      expiration: 1,
-      martingale_levels: 2
-    }).write();
-
-    // Criar status inicial do bot
-    db.get("botStatus").push({
-      userId: newUser.id,
-      running: false,
-      initial_balance: 1000,
-      current_balance: 1000,
-      wins: 0,
-      losses: 0
-    }).write();
-
-    const token = jwt.sign({ id: newUser.id, email: newUser.email }, process.env.JWT_SECRET || "maximus_secret_key_2026", { expiresIn: process.env.JWT_EXPIRES_IN || "7d" });
-
-    res.status(201).json({ token, user: { id: newUser.id, name: newUser.name, email: newUser.email, plan: newUser.plan } });
-  } catch (error) {
-    res.status(500).json({ message: "Erro no servidor ao registrar usuário." });
-  }
-});
-
-// POST /api/auth/login
-router.post("/login", async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = db.get("users").find({ email }).value();
+
+    if (!fs.existsSync(DATA_FILE)) {
+      console.error('Arquivo maximus.json não encontrado em:', DATA_FILE);
+      return res.status(500).json({ error: 'Banco de dados local não encontrado.' });
+    }
+
+    const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    const user = data.users.find(u => u.email === email);
+
     if (!user) {
-      return res.status(400).json({ message: "Credenciais inválidas." });
+      return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password_hash);
+    // Verifica se a senha bate diretamente ou via bcrypt
+    let isMatch = false;
+    if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
+      isMatch = await bcrypt.compare(password, user.password);
+    } else {
+      isMatch = (password === user.password);
+    }
+
     if (!isMatch) {
-      return res.status(400).json({ message: "Credenciais inválidas." });
+      return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || "maximus_secret_key_2026", { expiresIn: process.env.JWT_EXPIRES_IN || "7d" });
+    const secret = process.env.JWT_SECRET || 'secret_key';
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, secret, { expiresIn: '1d' });
 
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, plan: user.plan } });
-  } catch (error) {
-    res.status(500).json({ message: "Erro no servidor ao realizar login." });
+    return res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+
+  } catch (err) {
+    console.error('ERRO NO LOGIN:', err);
+    return res.status(500).json({ error: 'Erro interno no servidor ao realizar login.' });
   }
-});
-
-// GET /api/auth/me
-router.get("/me", require("../middleware/auth"), (req, res) => {
-  const user = db.get("users").find({ id: req.user.id }).value();
-  if (!user) return res.status(404).json({ message: "Usuário não encontrado." });
-  
-  const { password_hash, ...userData } = user;
-  res.json(userData);
 });
 
 module.exports = router;
