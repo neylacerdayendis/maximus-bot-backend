@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maximus Bot - Login</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #121214; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .card { background: #202024; padding: 30px; border-radius: 8px; width: 320px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    h2 { text-align: center; color: #00e676; margin-bottom: 20px; }
+    input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #323238; border-radius: 4px; background: #121214; color: #fff; box-sizing: border-box; }
+    button { width: 100%; padding: 10px; margin-top: 15px; background: #00e676; border: none; font-weight: bold; color: #121214; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #00c853; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Maximus Bot</h2>
+    <input type="email" id="email" placeholder="Seu E-mail" />
+    <input type="password" id="password" placeholder="Sua Senha" />
+    <button onclick="login()">Entrar</button>
+  </div>
+  <script>
+    async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('token', data.token);
+        window.location.href = '/dashboard.html';
+      } else {
+        alert(data.message || 'Erro ao entrar');
+      }
+    }
+  </script>
+</body>
+</html>

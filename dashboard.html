@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maximus Bot - Painel</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #121214; color: #fff; padding: 20px; margin: 0; }
+    .container { max-width: 800px; margin: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #323238; padding-bottom: 10px; }
+    .status-card { background: #202024; padding: 20px; border-radius: 8px; margin-top: 20px; display: flex; justify-content: space-around; }
+    .btn { padding: 12px 24px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    .btn-start { background: #00e676; color: #121214; }
+    .btn-stop { background: #ff5252; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Painel Operacional - Maximus Bot</h1>
+      <button class="btn btn-stop" onclick="logout()">Sair</button>
+    </div>
+    <div class="status-card">
+      <div>Status: <strong id="botStatus">Desligado</strong></div>
+      <div>Wins: <strong id="wins">0</strong></div>
+      <div>Losses: <strong id="losses">0</strong></div>
+      <div>Saldo: R$ <strong id="balance">1000.00</strong></div>
+    </div>
+    <div style="text-align: center; margin-top: 30px;">
+      <button class="btn btn-start" onclick="toggleBot('start')">Ligar Bot</button>
+      <button class="btn btn-stop" onclick="toggleBot('stop')">Desligar Bot</button>
+    </div>
+  </div>
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/index.html';
+
+    async function loadStatus() {
+      const res = await fetch('/api/bot/status', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('botStatus').innerText = data.running ? 'LIGADO' : 'DESLIGADO';
+        document.getElementById('wins').innerText = data.wins;
+        document.getElementById('losses').innerText = data.losses;
+        document.getElementById('balance').innerText = data.current_balance.toFixed(2);
+      }
+    }
+
+    async function toggleBot(action) {
+      await fetch(`/api/bot/${action}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      loadStatus();
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      window.location.href = '/index.html';
+    }
+
+    setInterval(loadStatus, 3000);
+    loadStatus();
+  </script>
+</body>
+</html>
