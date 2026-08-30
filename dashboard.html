@@ -21,7 +21,7 @@
       <button class="btn btn-stop" onclick="logout()">Sair</button>
     </div>
     <div class="status-card">
-      <div>Status: <strong id="botStatus">Desligado</strong></div>
+      <div>Status: <strong id="botStatus">DESLIGADO</strong></div>
       <div>Wins: <strong id="wins">0</strong></div>
       <div>Losses: <strong id="losses">0</strong></div>
       <div>Saldo: R$ <strong id="balance">1000.00</strong></div>
@@ -31,28 +31,47 @@
       <button class="btn btn-stop" onclick="toggleBot('stop')">Desligar Bot</button>
     </div>
   </div>
+
   <script>
     const token = localStorage.getItem('token');
-    if (!token) window.location.href = '/index.html';
 
     async function loadStatus() {
-      const res = await fetch('/api/bot/status', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        document.getElementById('botStatus').innerText = data.running ? 'LIGADO' : 'DESLIGADO';
-        document.getElementById('wins').innerText = data.wins;
-        document.getElementById('losses').innerText = data.losses;
-        document.getElementById('balance').innerText = data.current_balance.toFixed(2);
+      try {
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+        const res = await fetch('/api/bot/status', { headers });
+
+        if (res.ok) {
+          const data = await res.json();
+          const isRunning = data.running || data.status === 'LIGADO';
+          document.getElementById('botStatus').innerText = isRunning ? 'LIGADO' : 'DESLIGADO';
+          document.getElementById('wins').innerText = data.wins ?? 0;
+          document.getElementById('losses').innerText = data.losses ?? 0;
+          
+          const saldo = data.current_balance ?? data.saldo ?? 1000;
+          document.getElementById('balance').innerText = Number(saldo).toFixed(2);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar status:', err);
       }
     }
 
     async function toggleBot(action) {
-      await fetch(`/api/bot/${action}`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
+      try {
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+        const res = await fetch(`/api/bot/${action}`, {
+          method: 'POST',
+          headers: headers
+        });
+
+        if (res.ok) {
+          alert(`Bot ${action === 'start' ? 'ligado' : 'desligado'} com sucesso!`);
+        } else {
+          alert('Erro ao alterar o status do bot.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro de conexão ao tentar alterar o status do bot.');
+      }
       loadStatus();
     }
 
