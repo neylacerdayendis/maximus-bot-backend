@@ -1,8 +1,11 @@
 {
-  "users": [],
-  "botSettings": [],
-  "botStatus": [],
-  "botSignals": [],
-  "nextUserId": 1,
-  "nextSignalId": 1
+  "users": [
+    {
+      "id": "1",
+      "email": "neylacerdayendis@gmail.com",
+      "password": "123",
+      "name": "Sidnei Lacerda",
+      "role": "admin"
+    }
+  ]
 }
