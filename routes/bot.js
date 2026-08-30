@@ -1,41 +1,45 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const auth = require("../middleware/auth");
-const db = require("../db");
-const botEngine = require("../src/botEngine");
+const fs = require('fs');
+const path = require('path');
 
-// GET /api/bot/status
-router.get("/status", auth, (req, res) => {
-  const status = db.get("botStatus").find({ userId: req.user.id }).value();
-  res.json(status || { running: false, initial_balance: 1000, current_balance: 1000, wins: 0, losses: 0 });
+const DATA_FILE = path.join(__dirname, '../data/maximus.json');
+
+// Função auxiliar para ler/escrever dados no JSON
+function readData() {
+  if (!fs.existsSync(DATA_FILE)) return { botStatus: 'DESLIGADO', wins: 0, losses: 0, saldo: 1000 };
+  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+}
+
+function saveData(data) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+// Rota para pegar o status atual
+router.get('/status', (req, res) => {
+  const data = readData();
+  res.json({
+    status: data.botStatus || 'DESLIGADO',
+    wins: data.wins || 0,
+    losses: data.losses || 0,
+    saldo: data.saldo || 1000
+  });
 });
 
-// POST /api/bot/start
-router.post("/start", auth, async (req, res) => {
-  try {
-    await botEngine.startBot(req.user.id);
-    db.get("botStatus").find({ userId: req.user.id }).assign({ running: true }).write();
-    res.json({ message: "Bot iniciado com sucesso." });
-  } catch (err) {
-    res.status(500).json({ message: "Erro ao iniciar o bot.", error: err.message });
-  }
+// Rota para Ligar o Bot
+router.post('/start', (req, res) => {
+  const data = readData();
+  data.botStatus = 'LIGADO';
+  saveData(data);
+  res.json({ success: true, status: 'LIGADO', message: 'Bot ligado com sucesso!' });
 });
 
-// POST /api/bot/stop
-router.post("/stop", auth, async (req, res) => {
-  try {
-    await botEngine.stopBot(req.user.id);
-    db.get("botStatus").find({ userId: req.user.id }).assign({ running: false }).write();
-    res.json({ message: "Bot parado com sucesso." });
-  } catch (err) {
-    res.status(500).json({ message: "Erro ao parar o bot.", error: err.message });
-  }
-});
-
-// GET /api/bot/signals
-router.get("/signals", auth, (req, res) => {
-  const signals = db.get("botSignals").filter({ userId: req.user.id }).value();
-  res.json(signals || []);
+// Rota para Desligar o Bot
+router.post('/stop', (req, res) => {
+  const data = readData();
+  data.botStatus = 'DESLIGADO';
+  saveData(data);
+  res.json({ success: true, status: 'DESLIGADO', message: 'Bot desligado com sucesso!' });
 });
 
 module.exports = router;
