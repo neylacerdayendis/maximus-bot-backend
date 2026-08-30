@@ -18,7 +18,7 @@
   <div class="container">
     <div class="header">
       <h1>Painel Operacional - Maximus Bot</h1>
-      <button class="btn btn-stop" onclick="logout()">Sair</button>
+      <button type="button" class="btn btn-stop" onclick="logout(event)">Sair</button>
     </div>
     <div class="status-card">
       <div>Status: <strong id="botStatus">DESLIGADO</strong></div>
@@ -27,8 +27,8 @@
       <div>Saldo: R$ <strong id="balance">1000.00</strong></div>
     </div>
     <div style="text-align: center; margin-top: 30px;">
-      <button class="btn btn-start" onclick="toggleBot('start')">Ligar Bot</button>
-      <button class="btn btn-stop" onclick="toggleBot('stop')">Desligar Bot</button>
+      <button type="button" class="btn btn-start" onclick="toggleBot(event, 'start')">Ligar Bot</button>
+      <button type="button" class="btn btn-stop" onclick="toggleBot(event, 'stop')">Desligar Bot</button>
     </div>
   </div>
 
@@ -55,7 +55,8 @@
       }
     }
 
-    async function toggleBot(action) {
+    async function toggleBot(event, action) {
+      if (event) event.preventDefault();
       try {
         const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
         const res = await fetch(`/api/bot/${action}`, {
@@ -75,7 +76,8 @@
       loadStatus();
     }
 
-    function logout() {
+    function logout(event) {
+      if (event) event.preventDefault();
       localStorage.removeItem('token');
       window.location.href = '/index.html';
     }
