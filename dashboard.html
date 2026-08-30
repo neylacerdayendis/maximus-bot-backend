@@ -4,86 +4,194 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Maximus Bot - Painel</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #121214; color: #fff; padding: 20px; margin: 0; }
-    .container { max-width: 800px; margin: auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #323238; padding-bottom: 10px; }
-    .status-card { background: #202024; padding: 20px; border-radius: 8px; margin-top: 20px; display: flex; justify-content: space-around; }
-    .btn { padding: 12px 24px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-    .btn-start { background: #00e676; color: #121214; }
-    .btn-stop { background: #ff5252; color: #fff; }
-  </style>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Painel Operacional - Maximus Bot</h1>
-      <button type="button" class="btn btn-stop" onclick="logout(event)">Sair</button>
-    </div>
-    <div class="status-card">
-      <div>Status: <strong id="botStatus">DESLIGADO</strong></div>
-      <div>Wins: <strong id="wins">0</strong></div>
-      <div>Losses: <strong id="losses">0</strong></div>
-      <div>Saldo: R$ <strong id="balance">1000.00</strong></div>
-    </div>
-    <div style="text-align: center; margin-top: 30px;">
-      <button type="button" class="btn btn-start" onclick="toggleBot(event, 'start')">Ligar Bot</button>
-      <button type="button" class="btn btn-stop" onclick="toggleBot(event, 'stop')">Desligar Bot</button>
-    </div>
-  </div>
+<body style="background-color: #05070D; color: #E8ECF6; margin: 0; font-family: sans-serif;">
+  <div id="root"></div>
 
-  <script>
-    const token = localStorage.getItem('token');
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
 
-    async function loadStatus() {
-      try {
-        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-        const res = await fetch('/api/bot/status', { headers });
+    const API_BASE = "/api";
 
-        if (res.ok) {
-          const data = await res.json();
-          const isRunning = data.running || data.status === 'LIGADO';
-          document.getElementById('botStatus').innerText = isRunning ? 'LIGADO' : 'DESLIGADO';
-          document.getElementById('wins').innerText = data.wins ?? 0;
-          document.getElementById('losses').innerText = data.losses ?? 0;
-          
-          const saldo = data.current_balance ?? data.saldo ?? 1000;
-          document.getElementById('balance').innerText = Number(saldo).toFixed(2);
+    const C = {
+      bg: "#05070D",
+      surface: "#0E1420",
+      surfaceAlt: "#141C2E",
+      border: "#20293D",
+      accent: "#3D7FFF",
+      gold: "#E8B04B",
+      success: "#28C77A",
+      danger: "#F0455C",
+      text: "#E8ECF6",
+      muted: "#7C8AA5",
+      mutedDark: "#4E5A72",
+    };
+
+    async function apiFetch(path, { token, method = "GET", body } = {}) {
+      const res = await fetch(`${API_BASE}${path}`, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
+      return data;
+    }
+
+    function App() {
+      const [token, setToken] = useState(() => sessionStorage.getItem("maximus_token"));
+      const [status, setStatus] = useState(null);
+      const [email, setEmail] = useState("");
+      const [password, setPassword] = useState("");
+      const [error, setError] = useState("");
+      const [loading, setLoading] = useState(false);
+
+      const fetchStatus = useCallback(async () => {
+        if (!token) return;
+        try {
+          const res = await apiFetch("/bot/status", { token });
+          const s = res.status || res;
+          setStatus({
+            running: s.running || s.status === 'LIGADO',
+            initial_balance: s.initial_balance ?? 1000,
+            current_balance: s.current_balance ?? s.saldo ?? 1000,
+            wins: s.wins ?? 0,
+            losses: s.losses ?? 0
+          });
+        } catch (err) {
+          if (err.message.includes("401") || err.message.includes("Sessão")) {
+            handleLogout();
+          }
         }
-      } catch (err) {
-        console.error('Erro ao carregar status:', err);
-      }
-    }
+      }, [token]);
 
-    async function toggleBot(event, action) {
-      if (event) event.preventDefault();
-      try {
-        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-        const res = await fetch(`/api/bot/${action}`, {
-          method: 'POST',
-          headers: headers
-        });
-
-        if (res.ok) {
-          alert(`Bot ${action === 'start' ? 'ligado' : 'desligado'} com sucesso!`);
-        } else {
-          alert('Erro ao alterar o status do bot.');
+      useEffect(() => {
+        if (token) {
+          fetchStatus();
+          const interval = setInterval(fetchStatus, 5000);
+          return () => clearInterval(interval);
         }
-      } catch (err) {
-        console.error(err);
-        alert('Erro de conexão ao tentar alterar o status do bot.');
+      }, [token, fetchStatus]);
+
+      async function handleLogin(e) {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+        try {
+          const res = await apiFetch("/auth/login", { method: "POST", body: { email, password } });
+          sessionStorage.setItem("maximus_token", res.token);
+          setToken(res.token);
+        } catch (err) {
+          setError(err.message || "Credenciais inválidas");
+        } finally {
+          setLoading(false);
+        }
       }
-      loadStatus();
+
+      function handleLogout() {
+        sessionStorage.removeItem("maximus_token");
+        setToken(null);
+        setStatus(null);
+      }
+
+      async function toggleBot() {
+        if (!status) return;
+        setLoading(true);
+        try {
+          const path = status.running ? "/bot/stop" : "/bot/start";
+          await apiFetch(path, { method: "POST", token });
+          await fetchStatus();
+        } catch (err) {
+          alert(err.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      if (!token) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="w-full max-w-sm p-6 rounded-2xl" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+              <h1 className="text-xl font-bold mb-1 text-center" style={{ color: C.text }}>MAXIMUS BOT</h1>
+              <p className="text-xs text-center mb-6" style={{ color: C.muted }}>Acesso ao painel de controle</p>
+              
+              {error && <div className="p-3 mb-4 rounded-xl text-xs" style={{ background: "rgba(240,69,92,0.1)", color: C.danger }}>{error}</div>}
+              
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium block mb-1" style={{ color: C.muted }}>E-mail</label>
+                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                    className="w-full p-3 rounded-xl bg-black/20 outline-none text-sm border" style={{ borderColor: C.border, color: C.text }} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium block mb-1" style={{ color: C.muted }}>Senha</label>
+                  <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
+                    className="w-full p-3 rounded-xl bg-black/20 outline-none text-sm border" style={{ borderColor: C.border, color: C.text }} />
+                </div>
+                <button type="submit" disabled={loading} className="w-full py-3 rounded-xl font-bold text-sm cursor-pointer"
+                  style={{ background: C.accent, color: "#000" }}>
+                  {loading ? "Entrando..." : "Entrar"}
+                </button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      const profit = status ? (status.current_balance - status.initial_balance).toFixed(2) : "0.00";
+
+      return (
+        <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
+          <header className="flex justify-between items-center pb-4 border-b" style={{ borderColor: C.border }}>
+            <div>
+              <h1 className="text-xl font-bold" style={{ color: C.text }}>MAXIMUS BOT</h1>
+              <span className="text-xs" style={{ color: status?.running ? C.success : C.muted }}>
+                ● {status?.running ? "Operando" : "Parado"}
+              </span>
+            </div>
+            <button onClick={handleLogout} className="px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer" style={{ borderColor: C.border, color: C.muted }}>
+              Sair
+            </button>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl border" style={{ background: C.surface, borderColor: C.border }}>
+              <span className="text-xs block" style={{ color: C.muted }}>Saldo Atual</span>
+              <span className="text-2xl font-bold" style={{ color: C.text }}>R$ {status?.current_balance ?? "0.00"}</span>
+            </div>
+            <div className="p-4 rounded-xl border" style={{ background: C.surface, borderColor: C.border }}>
+              <span className="text-xs block" style={{ color: C.muted }}>Lucro / Prejuízo</span>
+              <span className="text-2xl font-bold" style={{ color: profit >= 0 ? C.success : C.danger }}>R$ {profit}</span>
+            </div>
+            <div className="p-4 rounded-xl border" style={{ background: C.surface, borderColor: C.border }}>
+              <span className="text-xs block" style={{ color: C.muted }}>Placar (W / L)</span>
+              <span className="text-2xl font-bold" style={{ color: C.text }}>
+                <span style={{ color: C.success }}>{status?.wins ?? 0}</span> / <span style={{ color: C.danger }}>{status?.losses ?? 0}</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="p-6 rounded-2xl border text-center space-y-4" style={{ background: C.surface, borderColor: C.border }}>
+            <h2 className="text-sm font-semibold" style={{ color: C.muted }}>Status da Operação</h2>
+            <button onClick={toggleBot} disabled={loading} className="px-8 py-3.5 rounded-full font-bold text-sm cursor-pointer transition-transform active:scale-95"
+              style={{ background: status?.running ? C.danger : C.success, color: "#000" }}>
+              {loading ? "Aguarde..." : status?.running ? "PARAR BOT" : "INICIAR BOT"}
+            </button>
+          </div>
+        </div>
+      );
     }
 
-    function logout(event) {
-      if (event) event.preventDefault();
-      localStorage.removeItem('token');
-      window.location.href = '/index.html';
-    }
-
-    setInterval(loadStatus, 3000);
-    loadStatus();
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
