@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname)));
 
 // Registra as rotas da API
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/bot', require('./routes/bot'));
+app.use('/api', require('./routes/bot')); // Alterado de '/api/bot' para '/api'
 
 // Direciona a raiz para o dashboard.html
 app.get('/', (req, res) => {
