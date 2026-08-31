@@ -57,7 +57,7 @@
       const fetchStatus = useCallback(async () => {
         if (!token) return;
         try {
-          const res = await apiFetch("/bot/status", { token });
+          const res = await apiFetch("/status", { token });
           const s = res.status || res;
           setStatus({
             running: s.running || s.status === 'LIGADO',
@@ -106,7 +106,7 @@
         if (!status) return;
         setLoading(true);
         try {
-          const path = status.running ? "/bot/stop" : "/bot/start";
+          const path = status.running ? "/stop" : "/start";
           await apiFetch(path, { method: "POST", token });
           await fetchStatus();
         } catch (err) {
