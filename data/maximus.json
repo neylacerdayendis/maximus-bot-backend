@@ -7,5 +7,10 @@
       "name": "Sidnei Lacerda",
       "role": "admin"
     }
-  ]
+  ],
+  "botStatus": "DESLIGADO",
+  "wins": 0,
+  "losses": 0,
+  "saldo": 1000,
+  "initial_balance": 1000
 }
