@@ -8,12 +8,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Desativa restrições de CSP para permitir execução limpa do painel no navegador
+app.use((req, res, next) => {
+  res.setHeader("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:;");
+  next();
+});
+
 // Serve o arquivo dashboard.html e outros estáticos
 app.use(express.static(path.join(__dirname)));
 
 // Registra as rotas da API
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api', require('./routes/bot')); // Alterado de '/api/bot' para '/api'
+app.use('/api', require('./routes/bot'));
 
 // Direciona a raiz para o dashboard.html
 app.get('/', (req, res) => {
