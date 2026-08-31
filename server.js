@@ -10,7 +10,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Desativa restrições de CSP para permitir execução limpa do painel no navegador
 app.use((req, res, next) => {
-  res.setHeader("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:;");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval';"
+  );
   next();
 });
 
