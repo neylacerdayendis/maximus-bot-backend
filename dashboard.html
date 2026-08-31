@@ -4,12 +4,36 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Maximus Bot - Painel de Controle</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #05070D; color: #E8ECF6; font-family: Arial, sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; box-sizing: border-box; }
+    .container { width: 100%; max-width: 800px; }
+    .card { background: #0E1420; border: 1px solid #20293D; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    .input-field { width: 100%; padding: 12px; margin-top: 6px; margin-bottom: 16px; background: rgba(0,0,0,0.2); border: 1px solid #20293D; border-radius: 12px; color: #E8ECF6; outline: none; box-sizing: border-box; font-size: 14px; }
+    .input-field:focus { border-color: #00e676; }
+    .btn { width: 100%; padding: 12px; font-weight: bold; font-size: 14px; border-radius: 12px; border: none; cursor: pointer; text-align: center; }
+    .btn-green { background: #28C77A; color: #121214; }
+    .btn-green:hover { background: #23ab68; }
+    .btn-red { background: #F0455C; color: #fff; }
+    .btn-red:hover { background: #d93b51; }
+    .btn-blue { background: #3D7FFF; color: #fff; }
+    .btn-blue:hover { background: #3267cc; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-box { background: #0E1420; border: 1px solid #20293D; border-radius: 12px; padding: 16px; }
+    .text-sm { font-size: 12px; color: #7C8AA5; display: block; margin-bottom: 4px; }
+    .text-lg { font-size: 24px; font-weight: bold; }
+    .text-green { color: #28C77A; }
+    .text-red { color: #F0455C; }
+    .hidden { display: none !important; }
+    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #20293D; margin-bottom: 24px; }
+    .logout-btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; background: transparent; border: 1px solid #20293D; color: #7C8AA5; cursor: pointer; }
+    .logout-btn:hover { background: #141C2E; }
+    .error-box { padding: 12px; margin-bottom: 16px; border-radius: 12px; font-size: 12px; background: rgba(240,69,92,0.1); color: #F0455C; border: 1px solid rgba(240,69,92,0.2); }
+  </style>
 </head>
-<body class="bg-[#05070D] text-[#E8ECF6] font-sans antialiased m-0 min-h-screen flex items-center justify-center p-4">
+<body>
 
-  <div id="app" class="w-full max-w-4xl">
-    <!-- O conteúdo será injetado dinamicamente aqui -->
+  <div id="app" class="container">
+    <!-- Conteúdo injetado dinamicamente -->
   </div>
 
   <script>
@@ -107,24 +131,22 @@
 
     function renderLoginScreen() {
       document.getElementById("app").innerHTML = `
-        <div class="max-w-sm mx-auto p-6 rounded-2xl bg-[#0E1420] border border-[#20293D] shadow-xl">
-          <h2 class="text-xl font-bold mb-1 text-center text-[#00e676]">MAXIMUS BOT</h2>
-          <p class="text-xs text-center mb-6 text-[#7C8AA5]">Faça login para acessar o painel</p>
+        <div class="card" style="max-width: 380px; margin: 0 auto;">
+          <h2 style="text-align: center; color: #28C77A; margin-top: 0; margin-bottom: 4px;">MAXIMUS BOT</h2>
+          <p style="text-align: center; font-size: 12px; color: #7C8AA5; margin-bottom: 24px;">Faça login para acessar o painel</p>
           
-          <div id="login-error" class="p-3 mb-4 rounded-xl text-xs bg-red-500/10 text-red-400 hidden"></div>
+          <div id="login-error" class="error-box hidden"></div>
           
-          <form id="login-form" class="space-y-4">
+          <form id="login-form">
             <div>
-              <label class="text-xs font-medium block mb-1 text-[#7C8AA5]">E-mail</label>
-              <input type="email" id="email" required class="w-full p-3 rounded-xl bg-black/20 outline-none text-sm border border-[#20293D] text-[#E8ECF6] focus:border-[#00e676]" placeholder="seu@email.com" />
+              <label class="text-sm">E-mail</label>
+              <input type="email" id="email" required class="input-field" placeholder="seu@email.com" />
             </div>
             <div>
-              <label class="text-xs font-medium block mb-1 text-[#7C8AA5]">Senha</label>
-              <input type="password" id="password" required class="w-full p-3 rounded-xl bg-black/20 outline-none text-sm border border-[#20293D] text-[#E8ECF6] focus:border-[#00e676]" placeholder="********" />
+              <label class="text-sm">Senha</label>
+              <input type="password" id="password" required class="input-field" placeholder="********" />
             </div>
-            <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm cursor-pointer bg-[#00e676] text-[#121214] hover:bg-[#00c853] transition-colors">
-              Entrar
-            </button>
+            <button type="submit" class="btn btn-green">Entrar</button>
           </form>
         </div>
       `;
@@ -151,7 +173,6 @@
         };
       } catch (err) {
         console.error("Erro ao buscar status do bot:", err);
-        // Se o token expirou ou deu erro de autenticação, limpa e manda pro login
         if (err.message.includes("401") || err.message.includes("403")) {
           removeToken();
           renderLoginScreen();
@@ -160,46 +181,42 @@
       }
 
       const profit = (status.current_balance - status.initial_balance).toFixed(2);
-      const profitColor = profit >= 0 ? "text-[#28C77A]" : "text-[#F0455C]";
-      const statusColor = status.running ? "text-[#28C77A]" : "text-[#7C8AA5]";
-      const btnBg = status.running ? "bg-[#F0455C] hover:bg-[#d93b51]" : "bg-[#28C77A] hover:bg-[#23ab68]";
+      const profitClass = profit >= 0 ? "text-green" : "text-red";
+      const statusColor = status.running ? "text-green" : "text-sm";
+      const btnClass = status.running ? "btn-red" : "btn-green";
       const btnText = status.running ? "PARAR BOT" : "INICIAR BOT";
 
       document.getElementById("app").innerHTML = `
-        <div class="space-y-6">
-          <header class="flex justify-between items-center pb-4 border-b border-[#20293D]">
-            <div>
-              <h1 class="text-xl font-bold text-[#E8ECF6]">MAXIMUS BOT</h1>
-              <span class="text-xs ${statusColor}">● ${status.running ? "Operando" : "Parado"}</span>
-            </div>
-            <button id="logout-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#20293D] text-[#7C8AA5] cursor-pointer hover:bg-[#141C2E]">
-              Sair
-            </button>
-          </header>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="p-4 rounded-xl border border-[#20293D] bg-[#0E1420]">
-              <span class="text-xs block text-[#7C8AA5]">Saldo Atual</span>
-              <span class="text-2xl font-bold text-[#E8ECF6]">R$ ${status.current_balance}</span>
-            </div>
-            <div class="p-4 rounded-xl border border-[#20293D] bg-[#0E1420]">
-              <span class="text-xs block text-[#7C8AA5]">Lucro / Prejuízo</span>
-              <span class="text-2xl font-bold ${profitColor}">R$ ${profit}</span>
-            </div>
-            <div class="p-4 rounded-xl border border-[#20293D] bg-[#0E1420]">
-              <span class="text-xs block text-[#7C8AA5]">Placar (W / L)</span>
-              <span class="text-2xl font-bold text-[#E8ECF6]">
-                <span class="text-[#28C77A]">${status.wins}</span> / <span class="text-[#F0455C]">${status.losses}</span>
-              </span>
-            </div>
+        <header>
+          <div>
+            <h1 style="margin: 0; font-size: 18px;">MAXIMUS BOT</h1>
+            <span class="${statusColor}" style="margin-top: 4px;">● ${status.running ? "Operando" : "Parado"}</span>
           </div>
+          <button id="logout-btn" class="logout-btn">Sair</button>
+        </header>
 
-          <div class="p-6 rounded-2xl border border-[#20293D] bg-[#0E1420] text-center space-y-4 shadow-xl">
-            <h2 class="text-sm font-semibold text-[#7C8AA5]">Status da Operação</h2>
-            <button id="btn-toggle" class="px-8 py-3.5 rounded-full font-bold text-sm cursor-pointer transition-transform active:scale-95 text-[#121214] ${btnBg}">
-              ${btnText}
-            </button>
+        <div class="grid-3">
+          <div class="stat-box">
+            <span class="text-sm">Saldo Atual</span>
+            <span class="text-lg">R$ ${status.current_balance}</span>
           </div>
+          <div class="stat-box">
+            <span class="text-sm">Lucro / Prejuízo</span>
+            <span class="text-lg ${profitClass}">R$ ${profit}</span>
+          </div>
+          <div class="stat-box">
+            <span class="text-sm">Placar (W / L)</span>
+            <span class="text-lg">
+              <span class="text-green">${status.wins}</span> / <span class="text-red">${status.losses}</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="card" style="text-align: center;">
+          <h2 style="font-size: 14px; color: #7C8AA5; margin-top: 0; margin-bottom: 16px;">Status da Operação</h2>
+          <button id="btn-toggle" class="btn ${btnClass}" style="max-width: 250px; padding: 14px 24px; border-radius: 9999px;">
+            ${btnText}
+          </button>
         </div>
       `;
 
@@ -207,10 +224,8 @@
       document.getElementById("btn-toggle").addEventListener("click", toggleBot);
     }
 
-    // Inicialização ao carregar a página
     if (getToken()) {
       loadDashboard();
-      // Atualiza a cada 5 segundos automaticamente
       setInterval(() => {
         if (getToken()) loadDashboard();
       }, 5000);
