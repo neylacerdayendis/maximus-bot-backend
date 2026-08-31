@@ -14,7 +14,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef, useCallback } = React;
+    const { useState, useEffect, useCallback } = React;
 
     const API_BASE = "/api";
 
@@ -48,7 +48,14 @@
 
     function App() {
       const [token, setToken] = useState(() => sessionStorage.getItem("maximus_token"));
-      const [status, setStatus] = useState(null);
+      // Inicializa o estado como um objeto em vez de null para destravar o botão
+      const [status, setStatus] = useState({
+        running: false,
+        initial_balance: 1000,
+        current_balance: 1000,
+        wins: 0,
+        losses: 0
+      });
       const [email, setEmail] = useState("");
       const [password, setPassword] = useState("");
       const [error, setError] = useState("");
@@ -99,18 +106,17 @@
       function handleLogout() {
         sessionStorage.removeItem("maximus_token");
         setToken(null);
-        setStatus(null);
+        setStatus({ running: false, initial_balance: 1000, current_balance: 1000, wins: 0, losses: 0 });
       }
 
       async function toggleBot() {
-        if (!status) return;
         setLoading(true);
         try {
-          const path = status.running ? "/stop" : "/start";
+          const path = status?.running ? "/stop" : "/start";
           await apiFetch(path, { method: "POST", token });
           await fetchStatus();
         } catch (err) {
-          alert(err.message);
+          alert(err.message || "Erro ao alterar o estado do bot");
         } finally {
           setLoading(false);
         }
