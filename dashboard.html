@@ -31,31 +31,29 @@
 <body>
 
   <div id="app" class="container">
-    <!-- Conteúdo injetado dinamicamente -->
+    <div class="card" style="text-align: center; color: #7C8AA5;">Carregando painel...</div>
   </div>
 
   <script>
     const API_BASE = "/api";
+    let refreshInterval = null;
 
     function getToken() {
-      return localStorage.getItem("token") || sessionStorage.getItem("maximus_token");
+      return localStorage.getItem("token");
     }
 
     function setToken(token) {
       localStorage.setItem("token", token);
-      sessionStorage.setItem("maximus_token", token);
     }
 
     function removeToken() {
       localStorage.removeItem("token");
-      sessionStorage.removeItem("maximus_token");
+      if (refreshInterval) clearInterval(refreshInterval);
     }
 
     async function apiFetch(path, options = {}) {
       const { token, method = "GET", body } = options;
-      let url = `${API_BASE}${path}`;
-      
-      let res = await fetch(url, {
+      let res = await fetch(`${API_BASE}${path}`, {
         method,
         headers: {
           "Content-Type": "application/json",
@@ -82,7 +80,7 @@
         const token = res.token || res.access_token;
         if (!token) throw new Error("Token não retornado pelo servidor");
         setToken(token);
-        loadDashboard();
+        initDashboard();
       } catch (err) {
         errorDiv.textContent = err.message || "Credenciais inválidas";
         errorDiv.classList.remove("hidden");
@@ -94,29 +92,8 @@
       renderLoginScreen();
     }
 
-    async function toggleBot() {
-      const token = getToken();
-      const btn = document.getElementById("btn-toggle");
-      if (btn) {
-        btn.textContent = "Aguarde...";
-        btn.disabled = true;
-      }
-
-      try {
-        const statusData = await apiFetch("/status", { token });
-        const s = statusData.status || statusData;
-        const isRunning = s.running === true || s.status === 'LIGADO' || s.running === 'true';
-
-        const path = isRunning ? "/stop" : "/start";
-        await apiFetch(path, { method: "POST", token });
-        await loadDashboard();
-      } catch (err) {
-        alert("Erro ao alterar o bot: " + err.message);
-        await loadDashboard();
-      }
-    }
-
     function renderLoginScreen() {
+      if (refreshInterval) clearInterval(refreshInterval);
       document.getElementById("app").innerHTML = `
         <div class="card" style="max-width: 380px; margin: 0 auto;">
           <h2 style="text-align: center; color: #28C77A; margin-top: 0; margin-bottom: 4px;">MAXIMUS BOT</h2>
@@ -140,86 +117,134 @@
       document.getElementById("login-form").addEventListener("submit", handleLogin);
     }
 
-    async function loadDashboard() {
+    async function loadDashboardData() {
       const token = getToken();
       if (!token) {
         renderLoginScreen();
         return;
       }
 
-      let status = { running: false, initial_balance: 1000, current_balance: 1000, wins: 0, losses: 0 };
       try {
         const res = await apiFetch("/status", { token });
         const s = res.status || res;
-        status = {
+        const status = {
           running: s.running === true || s.status === 'LIGADO' || s.running === 'true',
           initial_balance: s.initial_balance ?? 1000,
           current_balance: s.current_balance ?? s.saldo ?? 1000,
           wins: s.wins ?? 0,
           losses: s.losses ?? 0
         };
+
+        updateDashboardUI(status);
       } catch (err) {
-        console.error("Erro ao buscar status do bot:", err);
-        if (err.message.includes("401") || err.message.includes("403") || err.message.includes("jwt")) {
+        console.error("Erro ao buscar status:", err);
+        if (err.message.includes("401") || err.message.includes("403") || err.message.includes("jwt") || err.message.includes("Unauthorized")) {
           removeToken();
           renderLoginScreen();
-          return;
         }
       }
+    }
 
+    async function toggleBot() {
+      const token = getToken();
+      const btn = document.getElementById("btn-toggle");
+      if (btn) {
+        btn.textContent = "Aguarde...";
+        btn.disabled = true;
+      }
+
+      try {
+        const statusData = await apiFetch("/status", { token });
+        const s = statusData.status || statusData;
+        const isRunning = s.running === true || s.status === 'LIGADO' || s.running === 'true';
+
+        const path = isRunning ? "/stop" : "/start";
+        await apiFetch(path, { method: "POST", token });
+        await loadDashboardData();
+      } catch (err) {
+        alert("Erro ao alterar o bot: " + err.message);
+        await loadDashboardData();
+      }
+    }
+
+    function updateDashboardUI(status) {
       const profit = (status.current_balance - status.initial_balance).toFixed(2);
       const profitClass = profit >= 0 ? "text-green" : "text-red";
       const statusColor = status.running ? "text-green" : "text-sm";
       const btnClass = status.running ? "btn-red" : "btn-green";
       const btnText = status.running ? "PARAR BOT" : "INICIAR BOT";
 
-      document.getElementById("app").innerHTML = `
-        <header>
-          <div>
-            <h1 style="margin: 0; font-size: 18px;">MAXIMUS BOT</h1>
-            <span class="${statusColor}" style="margin-top: 4px;">● ${status.running ? "Operando" : "Parado"}</span>
-          </div>
-          <button id="logout-btn" class="logout-btn">Sair</button>
-        </header>
+      // Se o container principal ainda não tem a estrutura do dashboard, monta ela
+      if (!document.getElementById("btn-toggle")) {
+        document.getElementById("app").innerHTML = `
+          <header>
+            <div>
+              <h1 style="margin: 0; font-size: 18px;">MAXIMUS BOT</h1>
+              <span id="bot-status-text" style="margin-top: 4px;">● Parado</span>
+            </div>
+            <button id="logout-btn" class="logout-btn">Sair</button>
+          </header>
 
-        <div class="grid-3">
-          <div class="stat-box">
-            <span class="text-sm">Saldo Atual</span>
-            <span class="text-lg">R$ ${status.current_balance}</span>
+          <div class="grid-3">
+            <div class="stat-box">
+              <span class="text-sm">Saldo Atual</span>
+              <span id="val-balance" class="text-lg">R$ 1000</span>
+            </div>
+            <div class="stat-box">
+              <span class="text-sm">Lucro / Prejuízo</span>
+              <span id="val-profit" class="text-lg">R$ 0.00</span>
+            </div>
+            <div class="stat-box">
+              <span class="text-sm">Placar (W / L)</span>
+              <span id="val-score" class="text-lg">
+                <span class="text-green">0</span> / <span class="text-red">0</span>
+              </span>
+            </div>
           </div>
-          <div class="stat-box">
-            <span class="text-sm">Lucro / Prejuízo</span>
-            <span class="text-lg ${profitClass}">R$ ${profit}</span>
-          </div>
-          <div class="stat-box">
-            <span class="text-sm">Placar (W / L)</span>
-            <span class="text-lg">
-              <span class="text-green">${status.wins}</span> / <span class="text-red">${status.losses}</span>
-            </span>
-          </div>
-        </div>
 
-        <div class="card" style="text-align: center;">
-          <h2 style="font-size: 14px; color: #7C8AA5; margin-top: 0; margin-bottom: 16px;">Status da Operação</h2>
-          <button id="btn-toggle" class="btn ${btnClass}" style="max-width: 250px; padding: 14px 24px; border-radius: 9999px;">
-            ${btnText}
-          </button>
-        </div>
-      `;
+          <div class="card" style="text-align: center;">
+            <h2 style="font-size: 14px; color: #7C8AA5; margin-top: 0; margin-bottom: 16px;">Status da Operação</h2>
+            <button id="btn-toggle" class="btn btn-green" style="max-width: 250px; padding: 14px 24px; border-radius: 9999px;">
+              INICIAR BOT
+            </button>
+          </div>
+        `;
+        document.getElementById("logout-btn").addEventListener("click", handleLogout);
+        document.getElementById("btn-toggle").addEventListener("click", toggleBot);
+      }
 
-      document.getElementById("logout-btn").addEventListener("click", handleLogout);
-      document.getElementById("btn-toggle").addEventListener("click", toggleBot);
+      // Atualiza os valores na tela sem recriar os elementos (evita piscar)
+      document.getElementById("val-balance").textContent = `R$ ${status.current_balance}`;
+      const profitEl = document.getElementById("val-profit");
+      profitEl.textContent = `R$ ${profit}`;
+      profitEl.className = `text-lg ${profitClass}`;
+
+      document.getElementById("val-score").innerHTML = `<span class="text-green">${status.wins}</span> / <span class="text-red">${status.losses}</span>`;
+      
+      const statusTextEl = document.getElementById("bot-status-text");
+      statusTextEl.textContent = `● ${status.running ? "Operando" : "Parado"}`;
+      statusTextEl.className = status.running ? "text-green" : "text-sm";
+
+      const btnToggle = document.getElementById("btn-toggle");
+      btnToggle.className = `btn ${btnClass}`;
+      btnToggle.textContent = btnText;
+      btnToggle.disabled = false;
+    }
+
+    function initDashboard() {
+      loadDashboardData();
+      if (refreshInterval) clearInterval(refreshInterval);
+      refreshInterval = setInterval(loadDashboardData, 5000);
     }
 
     // Inicialização ao carregar a página
-    if (getToken()) {
-      loadDashboard();
-      setInterval(() => {
-        if (getToken()) loadDashboard();
-      }, 5000);
-    } else {
-      renderLoginScreen();
-    }
+    window.addEventListener("DOMContentLoaded", () => {
+      if (getToken()) {
+        initDashboard();
+      } else {
+        renderLoginScreen();
+      }
+    });
   </script>
 </body>
 </html>
