@@ -55,8 +55,10 @@
       const { token, method = "GET", body } = options;
       let res = await fetch(`${API_BASE}${path}`, {
         method,
+        cache: "no-store",
         headers: {
           "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: body ? JSON.stringify(body) : undefined,
