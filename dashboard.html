@@ -3,19 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Maximus Bot - Painel</title>
+  <title>Maximus Bot - Painel de Controle</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#05070D] text-[#E8ECF6] font-sans antialiased m-0">
-  <div id="app" class="min-h-screen flex items-center justify-center p-4">
-    <!-- Conteúdo injetado via JS puro -->
+<body class="bg-[#05070D] text-[#E8ECF6] font-sans antialiased m-0 min-h-screen flex items-center justify-center p-4">
+
+  <div id="app" class="w-full max-w-4xl">
+    <!-- O conteúdo será injetado dinamicamente aqui -->
   </div>
 
   <script>
     const API_BASE = "/api";
-    
+
     function getToken() {
-      return sessionStorage.getItem("maximus_token");
+      return localStorage.getItem("token") || sessionStorage.getItem("maximus_token");
+    }
+
+    function setToken(token) {
+      localStorage.setItem("token", token);
+      sessionStorage.setItem("maximus_token", token);
+    }
+
+    function removeToken() {
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("maximus_token");
     }
 
     async function apiFetch(path, options = {}) {
@@ -58,9 +69,9 @@
       try {
         const res = await apiFetch("/auth/login", { method: "POST", body: { email, password } });
         const token = res.token || res.access_token;
-        if (!token) throw new Error("Token não retornado");
-        sessionStorage.setItem("maximus_token", token);
-        renderDashboard();
+        if (!token) throw new Error("Token não retornado pelo servidor");
+        setToken(token);
+        loadDashboard();
       } catch (err) {
         errorDiv.textContent = err.message || "Credenciais inválidas";
         errorDiv.classList.remove("hidden");
@@ -68,15 +79,17 @@
     }
 
     function handleLogout() {
-      sessionStorage.removeItem("maximus_token");
-      renderLogin();
+      removeToken();
+      renderLoginScreen();
     }
 
     async function toggleBot() {
       const token = getToken();
       const btn = document.getElementById("btn-toggle");
-      btn.textContent = "Aguarde...";
-      btn.disabled = true;
+      if (btn) {
+        btn.textContent = "Aguarde...";
+        btn.disabled = true;
+      }
 
       try {
         const statusData = await apiFetch("/status", { token });
@@ -85,17 +98,43 @@
 
         const path = isRunning ? "/stop" : "/start";
         await apiFetch(path, { method: "POST", token });
-        await renderDashboard();
+        await loadDashboard();
       } catch (err) {
         alert("Erro ao alterar o bot: " + err.message);
-        await renderDashboard();
+        await loadDashboard();
       }
     }
 
-    async function renderDashboard() {
+    function renderLoginScreen() {
+      document.getElementById("app").innerHTML = `
+        <div class="max-w-sm mx-auto p-6 rounded-2xl bg-[#0E1420] border border-[#20293D] shadow-xl">
+          <h2 class="text-xl font-bold mb-1 text-center text-[#00e676]">MAXIMUS BOT</h2>
+          <p class="text-xs text-center mb-6 text-[#7C8AA5]">Faça login para acessar o painel</p>
+          
+          <div id="login-error" class="p-3 mb-4 rounded-xl text-xs bg-red-500/10 text-red-400 hidden"></div>
+          
+          <form id="login-form" class="space-y-4">
+            <div>
+              <label class="text-xs font-medium block mb-1 text-[#7C8AA5]">E-mail</label>
+              <input type="email" id="email" required class="w-full p-3 rounded-xl bg-black/20 outline-none text-sm border border-[#20293D] text-[#E8ECF6] focus:border-[#00e676]" placeholder="seu@email.com" />
+            </div>
+            <div>
+              <label class="text-xs font-medium block mb-1 text-[#7C8AA5]">Senha</label>
+              <input type="password" id="password" required class="w-full p-3 rounded-xl bg-black/20 outline-none text-sm border border-[#20293D] text-[#E8ECF6] focus:border-[#00e676]" placeholder="********" />
+            </div>
+            <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm cursor-pointer bg-[#00e676] text-[#121214] hover:bg-[#00c853] transition-colors">
+              Entrar
+            </button>
+          </form>
+        </div>
+      `;
+      document.getElementById("login-form").addEventListener("submit", handleLogin);
+    }
+
+    async function loadDashboard() {
       const token = getToken();
       if (!token) {
-        renderLogin();
+        renderLoginScreen();
         return;
       }
 
@@ -111,49 +150,56 @@
           losses: s.losses ?? 0
         };
       } catch (err) {
-        console.error("Erro ao buscar status", err);
+        console.error("Erro ao buscar status do bot:", err);
+        // Se o token expirou ou deu erro de autenticação, limpa e manda pro login
+        if (err.message.includes("401") || err.message.includes("403")) {
+          removeToken();
+          renderLoginScreen();
+          return;
+        }
       }
 
       const profit = (status.current_balance - status.initial_balance).toFixed(2);
       const profitColor = profit >= 0 ? "text-[#28C77A]" : "text-[#F0455C]";
       const statusColor = status.running ? "text-[#28C77A]" : "text-[#7C8AA5]";
-      const btnBg = status.running ? "bg-[#F0455C]" : "bg-[#28C77A]";
+      const btnBg = status.running ? "bg-[#F0455C] hover:bg-[#d93b51]" : "bg-[#28C77A] hover:bg-[#23ab68]";
       const btnText = status.running ? "PARAR BOT" : "INICIAR BOT";
 
-      document.getElementById("app").className = "max-w-4xl mx-auto p-4 md:p-6 space-y-6 w-full";
       document.getElementById("app").innerHTML = `
-        <header class="flex justify-between items-center pb-4 border-b border-[#20293D]">
-          <div>
-            <h1 class="text-xl font-bold text-[#E8ECF6]">MAXIMUS BOT</h1>
-            <span class="text-xs ${statusColor}">● ${status.running ? "Operando" : "Parado"}</span>
-          </div>
-          <button id="logout-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#20293D] text-[#7C8AA5] cursor-pointer hover:bg-[#141C2E]">
-            Sair
-          </button>
-        </header>
+        <div class="space-y-6">
+          <header class="flex justify-between items-center pb-4 border-b border-[#20293D]">
+            <div>
+              <h1 class="text-xl font-bold text-[#E8ECF6]">MAXIMUS BOT</h1>
+              <span class="text-xs ${statusColor}">● ${status.running ? "Operando" : "Parado"}</span>
+            </div>
+            <button id="logout-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#20293D] text-[#7C8AA5] cursor-pointer hover:bg-[#141C2E]">
+              Sair
+            </button>
+          </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="p-4 rounded-xl border border-[#20293D] bg-[#0E1420]">
-            <span class="text-xs block text-[#7C8AA5]">Saldo Atual</span>
-            <span class="text-2xl font-bold text-[#E8ECF6]">R$ ${status.current_balance}</span>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 rounded-xl border border-[#20293D] bg-[#0E1420]">
+              <span class="text-xs block text-[#7C8AA5]">Saldo Atual</span>
+              <span class="text-2xl font-bold text-[#E8ECF6]">R$ ${status.current_balance}</span>
+            </div>
+            <div class="p-4 rounded-xl border border-[#20293D] bg-[#0E1420]">
+              <span class="text-xs block text-[#7C8AA5]">Lucro / Prejuízo</span>
+              <span class="text-2xl font-bold ${profitColor}">R$ ${profit}</span>
+            </div>
+            <div class="p-4 rounded-xl border border-[#20293D] bg-[#0E1420]">
+              <span class="text-xs block text-[#7C8AA5]">Placar (W / L)</span>
+              <span class="text-2xl font-bold text-[#E8ECF6]">
+                <span class="text-[#28C77A]">${status.wins}</span> / <span class="text-[#F0455C]">${status.losses}</span>
+              </span>
+            </div>
           </div>
-          <div class="p-4 rounded-xl border border-[#20293D] bg-[#0E1420]">
-            <span class="text-xs block text-[#7C8AA5]">Lucro / Prejuízo</span>
-            <span class="text-2xl font-bold ${profitColor}">R$ ${profit}</span>
-          </div>
-          <div class="p-4 rounded-xl border border-[#20293D] bg-[#0E1420]">
-            <span class="text-xs block text-[#7C8AA5]">Placar (W / L)</span>
-            <span class="text-2xl font-bold text-[#E8ECF6]">
-              <span class="text-[#28C77A]">${status.wins}</span> / <span class="text-[#F0455C]">${status.losses}</span>
-            </span>
-          </div>
-        </div>
 
-        <div class="p-6 rounded-2xl border border-[#20293D] bg-[#0E1420] text-center space-y-4">
-          <h2 class="text-sm font-semibold text-[#7C8AA5]">Status da Operação</h2>
-          <button id="btn-toggle" class="px-8 py-3.5 rounded-full font-bold text-sm cursor-pointer transition-transform active:scale-95 text-black ${btnBg}">
-            ${btnText}
-          </button>
+          <div class="p-6 rounded-2xl border border-[#20293D] bg-[#0E1420] text-center space-y-4 shadow-xl">
+            <h2 class="text-sm font-semibold text-[#7C8AA5]">Status da Operação</h2>
+            <button id="btn-toggle" class="px-8 py-3.5 rounded-full font-bold text-sm cursor-pointer transition-transform active:scale-95 text-[#121214] ${btnBg}">
+              ${btnText}
+            </button>
+          </div>
         </div>
       `;
 
@@ -161,39 +207,15 @@
       document.getElementById("btn-toggle").addEventListener("click", toggleBot);
     }
 
-    function renderLogin() {
-      document.getElementById("app").className = "min-h-screen flex items-center justify-center p-4 w-full";
-      document.getElementById("app").innerHTML = `
-        <div class="w-full max-w-sm p-6 rounded-2xl bg-[#0E1420] border border-[#20293D]">
-          <h1 class="text-xl font-bold mb-1 text-center text-[#E8ECF6]">MAXIMUS BOT</h1>
-          <p class="text-xs text-center mb-6 text-[#7C8AA5]">Acesso ao painel de controle</p>
-          
-          <div id="login-error" class="p-3 mb-4 rounded-xl text-xs bg-[#F0455C]/10 text-[#F0455C] hidden"></div>
-          
-          <form id="login-form" class="space-y-4">
-            <div>
-              <label class="text-xs font-medium block mb-1 text-[#7C8AA5]">E-mail</label>
-              <input type="email" id="email" required class="w-full p-3 rounded-xl bg-black/20 outline-none text-sm border border-[#20293D] text-[#E8ECF6]" />
-            </div>
-            <div>
-              <label class="text-xs font-medium block mb-1 text-[#7C8AA5]">Senha</label>
-              <input type="password" id="password" required class="w-full p-3 rounded-xl bg-black/20 outline-none text-sm border border-[#20293D] text-[#E8ECF6]" />
-            </div>
-            <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm cursor-pointer bg-[#3D7FFF] text-black">
-              Entrar
-            </button>
-          </form>
-        </div>
-      `;
-
-      document.getElementById("login-form").addEventListener("submit", handleLogin);
-    }
-
-    // Inicialização
+    // Inicialização ao carregar a página
     if (getToken()) {
-      renderDashboard();
+      loadDashboard();
+      // Atualiza a cada 5 segundos automaticamente
+      setInterval(() => {
+        if (getToken()) loadDashboard();
+      }, 5000);
     } else {
-      renderLogin();
+      renderLoginScreen();
     }
   </script>
 </body>
