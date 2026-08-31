@@ -15,8 +15,6 @@
     .btn-green:hover { background: #23ab68; }
     .btn-red { background: #F0455C; color: #fff; }
     .btn-red:hover { background: #d93b51; }
-    .btn-blue { background: #3D7FFF; color: #fff; }
-    .btn-blue:hover { background: #3267cc; }
     .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .stat-box { background: #0E1420; border: 1px solid #20293D; border-radius: 12px; padding: 16px; }
     .text-sm { font-size: 12px; color: #7C8AA5; display: block; margin-bottom: 4px; }
@@ -65,17 +63,6 @@
         },
         body: body ? JSON.stringify(body) : undefined,
       });
-
-      if (res.status === 404) {
-        res = await fetch(path, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: body ? JSON.stringify(body) : undefined,
-        });
-      }
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || data.message || `Erro ${res.status}`);
@@ -173,7 +160,7 @@
         };
       } catch (err) {
         console.error("Erro ao buscar status do bot:", err);
-        if (err.message.includes("401") || err.message.includes("403")) {
+        if (err.message.includes("401") || err.message.includes("403") || err.message.includes("jwt")) {
           removeToken();
           renderLoginScreen();
           return;
@@ -224,6 +211,7 @@
       document.getElementById("btn-toggle").addEventListener("click", toggleBot);
     }
 
+    // Inicialização ao carregar a página
     if (getToken()) {
       loadDashboard();
       setInterval(() => {
