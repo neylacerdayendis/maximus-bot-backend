@@ -1,19 +1,8 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
-const { spawn } = require('child_process');
 
 const app = express();
-
-// Inicia automaticamente o serviço Python de velas em segundo plano na porta 5001
-const pythonScript = path.join(__dirname, 'serviço_de_velas.py');
-const pythonProcess = spawn('python', [pythonScript], { stdio: 'inherit' });
-
-pythonProcess.on('error', (err) => {
-  console.error('Falha ao iniciar o serviço Python de velas:', err);
-});
-
-console.log('>>> Serviço Python de velas acionado em segundo plano.');
 
 app.use(cors());
 app.use(express.json());
