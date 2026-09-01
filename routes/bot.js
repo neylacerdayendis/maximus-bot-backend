@@ -17,6 +17,22 @@ let lastErrorAt = null;
 // Par atualmente ativo (selecionado no painel)
 let currentAsset = process.env.BOT_ASSET || 'EURUSD';
 
+// Buffer de eventos recentes mostrados no painel (histórico em tempo real)
+const MAX_EVENTS = 50;
+let events = [];
+
+function addEvent(kind, message) {
+  events.push({
+    id: Date.now() + Math.random().toString(36).slice(2, 6),
+    kind,
+    message,
+    time: new Date().toISOString()
+  });
+  if (events.length > MAX_EVENTS) {
+    events = events.slice(events.length - MAX_EVENTS);
+  }
+}
+
 function readData() {
   if (!fs.existsSync(DATA_FILE)) return { botStatus: 'DESLIGADO', wins: 0, losses: 0, saldo: 1000, initial_balance: 1000 };
   const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
@@ -60,6 +76,7 @@ router.get('/status', (req, res) => {
     current_balance: data.saldo,
     initial_balance: data.initial_balance,
     asset: currentAsset,
+    events,
     lastEngineError,
     lastErrorAt
   });
@@ -94,10 +111,14 @@ router.post('/start', async (req, res) => {
         current.losses = (current.losses || 0) + (result.win ? 0 : 1);
         current.saldo = (current.saldo ?? 1000) + result.profit;
         saveData(current);
+
+        addEvent(result.win ? 'win' : 'loss',
+          `${result.win ? 'WIN' : 'LOSS'} ${result.action} ${result.asset} | R$ ${result.profit.toFixed(2)} | Saldo R$ ${current.saldo.toFixed(2)}`);
       },
       onError: (err) => {
         lastEngineError = err && err.message ? err.message : String(err);
         lastErrorAt = new Date().toISOString();
+        addEvent('error', 'Erro no motor de sinais: ' + lastEngineError);
         console.error('[bot.js] Erro do motor:', lastEngineError);
       }
     });
@@ -107,6 +128,7 @@ router.post('/start', async (req, res) => {
 
     lastEngineError = null;
     lastErrorAt = null;
+    addEvent('info', `Bot iniciado no par ${asset}`);
 
     res.json({ success: true, status: 'LIGADO', message: 'Bot ligado com sucesso!' });
   } catch (err) {
@@ -128,6 +150,7 @@ router.post('/stop', (req, res) => {
 
   lastEngineError = null;
   lastErrorAt = null;
+  addEvent('info', 'Bot parado');
 
   res.json({ success: true, status: 'DESLIGADO', message: 'Bot desligado com sucesso!' });
 });

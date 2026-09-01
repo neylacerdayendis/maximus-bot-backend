@@ -140,7 +140,8 @@
           losses: res.losses ?? 0,
           asset: (res.asset || res.asset_pair || 'EURUSD').toUpperCase(),
           lastEngineError: res.lastEngineError ?? null,
-          lastErrorAt: res.lastErrorAt ?? null
+          lastErrorAt: res.lastErrorAt ?? null,
+          events: Array.isArray(res.events) ? res.events : []
         };
 
         updateDashboardUI(status);
@@ -230,6 +231,13 @@
               INICIAR BOT
             </button>
           </div>
+
+          <div class="card" style="margin-top: 16px;">
+            <h2 style="font-size: 14px; color: #7C8AA5; margin-top: 0; margin-bottom: 16px;">Histórico da Operação</h2>
+            <div id="op-log" style="max-height: 320px; overflow-y: auto; text-align: left; font-size: 12px;">
+              <div style="color: #7C8AA5; padding: 8px 0;">Sem eventos ainda.</div>
+            </div>
+          </div>
         `;
         document.getElementById("logout-btn").addEventListener("click", handleLogout);
         document.getElementById("btn-toggle").addEventListener("click", toggleBot);
@@ -277,6 +285,33 @@
           errEl.classList.add("hidden");
         }
       }
+
+      // Renderiza o histórico de eventos
+      renderEventLog(status.events || []);
+    }
+
+    function renderEventLog(events) {
+      const logEl = document.getElementById("op-log");
+      if (!logEl) return;
+
+      if (!events.length) {
+        logEl.innerHTML = `<div style="color: #7C8AA5; padding: 8px 0;">Sem eventos ainda.</div>`;
+        return;
+      }
+
+      const colors = { win: "#28C77A", loss: "#F0455C", info: "#7C8AA5", error: "#F0455C" };
+      const labels = { win: "WIN", loss: "LOSS", info: "INFO", error: "ERRO" };
+
+      logEl.innerHTML = events.slice().reverse().map(ev => {
+        const color = colors[ev.kind] || "#7C8AA5";
+        const tag = labels[ev.kind] || ev.kind;
+        const time = ev.time ? new Date(ev.time).toLocaleTimeString('pt-BR') : '';
+        return `<div style="display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #141C2E; align-items: baseline;">
+          <span style="color: #4E5D78; white-space: nowrap; font-size: 11px;">${time}</span>
+          <span style="color: ${color}; font-weight: bold; white-space: nowrap; font-size: 11px;">${tag}</span>
+          <span style="color: #C3CDE0;">${ev.message || ''}</span>
+        </div>`;
+      }).join("");
     }
 
     function initDashboard() {
