@@ -205,6 +205,8 @@
   }
   .pair-select:focus { border-color: var(--gold); }
   .pair-select:disabled { opacity: .5; cursor: not-allowed; }
+  #expiry-select { width: 74px; padding: 6px 6px; font-size: 12px; flex-shrink: 0; }
+  #stake-input { flex-shrink: 0; }
   .pair-hint { font-size: 11px; color: var(--text-faint); }
 
   /* ---------- Metrics ---------- */
@@ -240,6 +242,7 @@
   .badge.draw { background: var(--gold-dim); color: var(--gold); }
   .badge.empate { background: var(--gold-dim); color: var(--gold); }
   .profit-cell.positive { color: var(--success); }
+  .copyright { font-size: 12px; color: var(--text-faint); text-align: center; margin: 18px 0 0 0; }
   .profit-cell.negative { color: var(--danger); }
   .empty-state { padding: 40px 20px; text-align: center; color: var(--text-faint); font-size: 13px; }
 
@@ -509,6 +512,7 @@
             </table>
             <div id="ops-empty" class="empty-state hidden">Nenhuma operação registrada ainda.</div>
           </div>
+          <p class="copyright">Criado por Sidnei Lacerda © 2026</p>
         </div>
       </div>
     `;
@@ -598,7 +602,7 @@
     const stakeInput = document.getElementById("stake-input");
     if (stakeInput) stakeInput.disabled = !!running;
     const expirySelect = document.getElementById("expiry-select");
-    if (expirySelect) expirySelect.disabled = !!running;
+    if (expirySelect) expirySelect.disabled = false;
 
     const iqBal = (status.iq_balance != null) ? Number(status.iq_balance) : null;
     if (iqBal != null && !isNaN(iqBal)) {
