@@ -132,13 +132,14 @@ router.post('/start', async (req, res) => {
       expiration,
       onResult: (result) => {
         const current = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : {};
-        current.wins = (current.wins || 0) + (result.win ? 1 : 0);
-        current.losses = (current.losses || 0) + (result.win ? 0 : 1);
+        current.wins = (current.wins || 0) + ((result.win && result.status !== 'draw') ? 1 : 0);
+        current.losses = (current.losses || 0) + ((!result.win && result.status !== 'draw') ? 1 : 0);
         current.saldo = (current.saldo ?? 1000) + result.profit;
         saveData(current);
 
-        addEvent(result.win ? 'win' : 'loss',
-          `${result.win ? 'WIN' : 'LOSS'} ${result.action} ${result.asset} | R$ ${result.profit.toFixed(2)} | Saldo R$ ${current.saldo.toFixed(2)}`);
+        const label = result.status === 'draw' ? 'EMPATE' : (result.win ? 'WIN' : 'LOSS');
+        addEvent(label.toLowerCase(),
+          `${label} ${result.action} ${result.asset} | R$ ${result.profit.toFixed(2)} | Saldo R$ ${current.saldo.toFixed(2)}`);
       },
       onError: (err) => {
         lastEngineError = err && err.message ? err.message : String(err);

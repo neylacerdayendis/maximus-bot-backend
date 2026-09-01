@@ -10,9 +10,9 @@ function analyzeCandles(candles) {
   const isBearish = last.close < last.open;
 
   if (isBullish && prev.close > prev.open) {
-    return "CALL";
+    return "call";
   } else if (isBearish && prev.close < prev.open) {
-    return "PUT";
+    return "put";
   }
 
   return null;
