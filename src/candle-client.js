@@ -4,9 +4,9 @@ const { URL } = require("url");
 
 const CANDLE_SERVICE_URL = process.env.CANDLE_SERVICE_URL || "http://localhost:5001";
 
-async function fetchCandles(asset, timeframe = 60, amount = 50) {
+async function fetchCandles(asset, timeframe = 60, amount = 300) {
   return new Promise((resolve, reject) => {
-    const url = `${CANDLE_SERVICE_URL}/candles?pair=${encodeURIComponent(asset)}&timeframe=${timeframe}&amount=${amount}`;
+    const url = `${CANDLE_SERVICE_URL}/candles?pair=${encodeURIComponent(asset)}&timeframe=${timeframe}&count=${amount}`;
     const parsed = new URL(url);
     const client = parsed.protocol === "https:" ? https : http;
     let settled = false;
