@@ -20,6 +20,10 @@ let currentAsset = process.env.BOT_ASSET || 'EURUSD';
 // Conta atualmente ativa (PRACTICE/REAL)
 let currentAccountType = process.env.BOT_ACCOUNT_TYPE || 'PRACTICE';
 
+// Valor da ordem (stake) e expiração atualmente ativos
+let currentStake = Number(process.env.BOT_STAKE || 10);
+let currentExpiration = Number(process.env.BOT_EXPIRATION || 1);
+
 // Buffer de eventos recentes mostrados no painel (histórico em tempo real)
 const MAX_EVENTS = 50;
 let events = [];
@@ -100,6 +104,8 @@ router.get('/status', (req, res) => {
     initial_balance: data.initial_balance,
     asset: currentAsset,
     accountType: currentAccountType,
+    stake: currentStake,
+    expiration: currentExpiration,
     broker: {
       broker: broker ? broker.broker : null,
       email: broker ? broker.email : null,
@@ -123,8 +129,14 @@ router.post('/start', async (req, res) => {
   // Permite escolher o par pelo painel (ex.: EURUSD, GBPUSD...)
   const selectedAsset = req.body && typeof req.body.asset === 'string' ? req.body.asset.trim().toUpperCase() : null;
   const asset = selectedAsset || process.env.BOT_ASSET || 'EURUSD';
-  const stake = Number(process.env.BOT_STAKE || 10);
-  const expiration = Number(process.env.BOT_EXPIRATION || 1);
+
+  // Valor da ordem (stake) e expiração escolhidos no painel (fallback: env)
+  const rawStake = req.body && req.body.stake != null ? Number(req.body.stake) : NaN;
+  const rawExpiry = req.body && req.body.expiration != null ? Number(req.body.expiration) : NaN;
+  const stake = Number.isFinite(rawStake) && rawStake > 0 ? rawStake : Number(process.env.BOT_STAKE || 10);
+  const expiration = Number.isFinite(rawExpiry) && rawExpiry > 0 ? rawExpiry : Number(process.env.BOT_EXPIRATION || 1);
+  currentStake = stake;
+  currentExpiration = expiration;
 
   // Conta (practice/real) escolhida no painel
   const accountType = req.body && typeof req.body.account_type === 'string'

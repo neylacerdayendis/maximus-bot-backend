@@ -400,7 +400,19 @@
                   <option value="PRACTICE" ${(status.accountType || 'PRACTICE') === 'PRACTICE' ? 'selected' : ''}>PRACTICE (Demo)</option>
                   <option value="REAL" ${status.accountType === 'REAL' ? 'selected' : ''}>REAL</option>
                 </select>
-                <span class="pair-hint">pares -OTC ficam abertos 24h</span>
+              </div>
+              <div class="pair-row">
+                <label for="stake-input">Valor ordem (R$)</label>
+                <input type="number" id="stake-input" class="pair-select" style="width:90px;" min="1" step="1" value="${status.stake || 10}" />
+                <label for="expiry-select" style="margin-left:12px;">Expiração</label>
+                <select id="expiry-select" class="pair-select">
+                  <option value="1" ${(status.expiration || 1) == 1 ? 'selected' : ''}>1 min</option>
+                  <option value="2" ${(status.expiration || 1) == 2 ? 'selected' : ''}>2 min</option>
+                  <option value="3" ${(status.expiration || 1) == 3 ? 'selected' : ''}>3 min</option>
+                  <option value="5" ${(status.expiration || 1) == 5 ? 'selected' : ''}>5 min</option>
+                  <option value="15" ${(status.expiration || 1) == 15 ? 'selected' : ''}>15 min</option>
+                </select>
+                <span class="pair-hint">valor e tempo usados na entrada</span>
               </div>
             </div>
           </div>
@@ -529,6 +541,10 @@
     if (accountSelect) {
       accountSelect.disabled = !!running;
     }
+    const stakeInput = document.getElementById("stake-input");
+    if (stakeInput) stakeInput.disabled = !!running;
+    const expirySelect = document.getElementById("expiry-select");
+    if (expirySelect) expirySelect.disabled = !!running;
 
     document.getElementById("val-balance").textContent = `R$ ${Number(status.current_balance).toFixed(2)}`;
     document.getElementById("val-balance-sub").textContent = `inicial: R$ ${Number(status.initial_balance).toFixed(2)}`;
@@ -609,9 +625,13 @@
       const path = isRunning ? "/stop" : "/start";
       const select = document.getElementById("pair-select");
       const accountSelect = document.getElementById("account-select");
+      const stakeInput = document.getElementById("stake-input");
+      const expirySelect = document.getElementById("expiry-select");
       const selectedPair = select ? select.value : undefined;
       const accountType = accountSelect ? accountSelect.value : "PRACTICE";
-      const body = path === "/start" ? { asset: selectedPair, account_type: accountType } : undefined;
+      const stake = stakeInput ? Number(stakeInput.value) : undefined;
+      const expiration = expirySelect ? Number(expirySelect.value) : undefined;
+      const body = path === "/start" ? { asset: selectedPair, account_type: accountType, stake, expiration } : undefined;
       await apiFetch(path, { method: "POST", token, body });
       await loadDashboardData();
     } catch (err) { alert("Erro ao alterar o bot: " + err.message); }
