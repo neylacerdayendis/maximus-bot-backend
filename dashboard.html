@@ -3,51 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Maximus Bot - Painel de Controle</title>
+  <title>Maximus Bot - Painel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    body { background-color: #05070D; color: #E8ECF6; font-family: Arial, sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; box-sizing: border-box; }
-    .container { width: 100%; max-width: 800px; }
-    .card { background: #0E1420; border: 1px solid #20293D; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-    .input-field { width: 100%; padding: 12px; margin-top: 6px; margin-bottom: 16px; background: rgba(0,0,0,0.2); border: 1px solid #20293D; border-radius: 12px; color: #E8ECF6; outline: none; box-sizing: border-box; font-size: 14px; }
-    .input-field:focus { border-color: #00e676; }
-    .btn { width: 100%; padding: 12px; font-weight: bold; font-size: 14px; border-radius: 12px; border: none; cursor: pointer; text-align: center; }
-    .btn-green { background: #28C77A; color: #121214; }
-    .btn-green:hover { background: #23ab68; }
-    .btn-red { background: #F0455C; color: #fff; }
-    .btn-red:hover { background: #d93b51; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-box { background: #0E1420; border: 1px solid #20293D; border-radius: 12px; padding: 16px; }
-    .text-sm { font-size: 12px; color: #7C8AA5; display: block; margin-bottom: 4px; }
-    .text-lg { font-size: 24px; font-weight: bold; }
-    .text-green { color: #28C77A; }
-    .text-red { color: #F0455C; }
+    :root {
+      --bg: #0a0f1f;
+      --card: #0e1526;
+      --border: #1f2937;
+      --text: #f8fafc;
+      --muted: #a1aab5;
+      --primary: #3b82f6;
+      --green: #10b981;
+      --red: #f43f5e;
+      --warn: #f59e0b;
+      --green2: #17c964;
+      --red2: #f31260;
+      --radius: 1rem;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 600px at 80% -10%, #12224a 0%, var(--bg) 45%);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .container { width: 100%; max-width: 820px; }
+    .card {
+      background: rgba(14, 21, 38, 0.9);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+    .input-field {
+      width: 100%; padding: 12px; margin-top: 6px; margin-bottom: 16px;
+      background: rgba(10,15,31,0.8); border: 1px solid var(--border);
+      border-radius: 12px; color: var(--text); outline: none; font-size: 14px; font-family: inherit;
+    }
+    .input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+    .btn { width: 100%; padding: 13px; font-weight: 700; font-size: 14px; border-radius: 12px; border: none; cursor: pointer; text-align: center; font-family: inherit; }
+    .btn-green { background: linear-gradient(180deg, #2ee6a0, #0ea271); color: #04110b; }
+    .btn-green:hover { filter: brightness(1.08); }
+    .btn-blue { background: var(--primary); color: #fff; }
+    .btn-blue:hover { filter: brightness(1.08); }
+    .btn-red { background: linear-gradient(180deg, #f8577e, #e11d48); color: #fff; }
+    .btn-red:hover { filter: brightness(1.08); }
+    .text-sm { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 4px; font-weight: 600; }
+    .text-lg { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .text-green { color: var(--green); }
+    .text-red { color: var(--red); }
     .hidden { display: none !important; }
-    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #20293D; margin-bottom: 24px; }
-    .logout-btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; background: transparent; border: 1px solid #20293D; color: #7C8AA5; cursor: pointer; }
-    .logout-btn:hover { background: #141C2E; }
+
+    /* Cards de estatística - estilo BotCloud */
+    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .stat-box { border-radius: 16px; padding: 18px 16px; border: 1px solid var(--border); }
+    .stat-box.green { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); }
+    .stat-box.red   { background: rgba(244,63,94,0.12);  border-color: rgba(244,63,94,0.35); }
+    .stat-box.blue  { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.35); }
+    .stat-box.neutral { background: rgba(255,255,255,0.02); border-color: var(--border); }
+    .stat-value { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
+
+    /* Gráfico de desempenho */
+    .chart-wrap { width: 100%; }
+
+    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .btn-ghost { padding: 7px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-family: inherit; }
+    .btn-ghost:hover { background: rgba(20,28,46,0.8); color: var(--text); }
     select.input-field { cursor: pointer; }
     select.input-field:disabled { opacity: 0.5; cursor: not-allowed; }
-    .error-box { padding: 12px; margin-bottom: 16px; border-radius: 12px; font-size: 12px; background: rgba(240,69,92,0.1); color: #F0455C; border: 1px solid rgba(240,69,92,0.2); }
+    .error-box { padding: 12px; margin-bottom: 16px; border-radius: 12px; font-size: 12px; background: rgba(244,63,94,0.12); color: var(--red); border: 1px solid rgba(244,63,94,0.3); }
+    .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); display: inline-block; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--muted); }
   </style>
 </head>
 <body>
-
   <div id="app" class="container">
-    <div class="card" style="text-align: center; color: #7C8AA5;">Carregando painel...</div>
+    <div class="card" style="text-align: center; color: var(--muted);">Carregando painel...</div>
   </div>
 
   <script>
     const API_BASE = "/api";
     let refreshInterval = null;
+    let balanceHistory = [];
 
-    function getToken() {
-      return localStorage.getItem("token");
-    }
-
-    function setToken(token) {
-      localStorage.setItem("token", token);
-    }
-
+    function getToken() { return localStorage.getItem("token"); }
+    function setToken(t) { localStorage.setItem("token", t); }
     function removeToken() {
       localStorage.removeItem("token");
       if (refreshInterval) clearInterval(refreshInterval);
@@ -56,8 +101,7 @@
     async function apiFetch(path, options = {}) {
       const { token, method = "GET", body } = options;
       let res = await fetch(`${API_BASE}${path}`, {
-        method,
-        cache: "no-store",
+        method, cache: "no-store",
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-cache",
@@ -65,22 +109,24 @@
         },
         body: body ? JSON.stringify(body) : undefined,
       });
-
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || data.message || `Erro ${res.status}`);
       return data;
     }
 
     const AVAILABLE_PAIRS = ["EURUSD-OTC", "GBPUSD-OTC", "EURGBP-OTC", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD"];
+    const AVAILABLE_BROKERS = ["IQ Option", "Quotex", "Binomo", "Pocket Option", "Expert Option"];
+
+    function money(v) {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
+    }
 
     async function handleLogin(e) {
       e.preventDefault();
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       const errorDiv = document.getElementById("login-error");
-      
       errorDiv.classList.add("hidden");
-
       try {
         const res = await apiFetch("/auth/login", { method: "POST", body: { email, password } });
         const token = res.token || res.access_token;
@@ -93,20 +139,18 @@
       }
     }
 
-    function handleLogout() {
-      removeToken();
-      renderLoginScreen();
-    }
+    function handleLogout() { removeToken(); renderLoginScreen(); }
 
     function renderLoginScreen() {
       if (refreshInterval) clearInterval(refreshInterval);
       document.getElementById("app").innerHTML = `
-        <div class="card" style="max-width: 380px; margin: 0 auto;">
-          <h2 style="text-align: center; color: #28C77A; margin-top: 0; margin-bottom: 4px;">MAXIMUS BOT</h2>
-          <p style="text-align: center; font-size: 12px; color: #7C8AA5; margin-bottom: 24px;">Faça login para acessar o painel</p>
-          
+        <div class="card" style="max-width: 380px; margin: 40px auto 0;">
+          <div style="text-align:center; margin-bottom: 20px;">
+            <span class="logo-dot" style="width:14px; height:14px; margin-bottom: 10px;"></span>
+            <h2 style="margin: 0; font-size: 22px; font-weight: 900; letter-spacing: .02em;">MAXIMUS BOT</h2>
+            <p style="font-size: 12px; color: var(--muted); margin: 6px 0 0;">Faça login para acessar o painel</p>
+          </div>
           <div id="login-error" class="error-box hidden"></div>
-          
           <form id="login-form">
             <div>
               <label class="text-sm">E-mail</label>
@@ -127,14 +171,14 @@
       if (refreshInterval) clearInterval(refreshInterval);
       const broker = localStorage.getItem("broker") || "Não configurada";
       document.getElementById("app").innerHTML = `
-        <div class="card" style="max-width: 420px; margin: 0 auto; text-align: center;">
-          <span style="font-size: 40px; display: block; margin-bottom: 8px;">🤖</span>
-          <h2 style="text-align: center; color: #28C77A; margin-top: 0; margin-bottom: 4px;">MAXIMUS BOT</h2>
-          <p style="text-align: center; font-size: 12px; color: #7C8AA5; margin-bottom: 24px;">Bem-vindo ao painel de operação</p>
+        <div class="card" style="max-width: 420px; margin: 40px auto 0; text-align: center;">
+          <span class="logo-dot" style="width:16px; height:16px; margin-bottom: 12px;"></span>
+          <h2 style="margin: 0; font-size: 24px; font-weight: 900;">MAXIMUS BOT</h2>
+          <p style="font-size: 12px; color: var(--muted); margin: 6px 0 24px;">Bem-vindo ao painel de operação</p>
 
-          <div style="background: #0E1420; border: 1px solid #20293D; border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 13px; color: #C3CDE0;">
-            <span class="text-sm">Corretora conectada</span>
-            <div style="font-weight: bold; color: #28C77A; margin-top: 4px;">${broker}</div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 22px;">
+            <span class="text-sm" style="margin-bottom:8px;">Corretora conectada</span>
+            <div style="font-weight: 700; color: var(--green); font-size: 15px;">${broker}</div>
           </div>
 
           <button id="btn-enter" class="btn btn-green" style="padding: 16px; font-size: 16px;">ENTRAR NO BOT</button>
@@ -143,21 +187,18 @@
       document.getElementById("btn-enter").addEventListener("click", initDashboard);
     }
 
-    const AVAILABLE_BROKERS = ["IQ Option", "Quotex", "Binomo", "Pocket Option", "Expert Option"];
-
     function renderBrokerSection(brokerStatus) {
       const broker = brokerStatus || {};
       const logged = broker.logged && broker.broker && broker.email;
       return `
         <div class="card" style="margin-top: 16px;">
-          <h2 style="font-size: 14px; color: #7C8AA5; margin-top: 0; margin-bottom: 16px;">Corretora</h2>
-
-          <div id="broker-state" style="margin-bottom: 14px; font-size: 13px; color: #C3CDE0;">
+          <h2 style="font-size: 15px; font-weight: 700; color: var(--text); margin-top: 0; margin-bottom: 16px;">Corretora</h2>
+          <div id="broker-state" style="margin-bottom: 14px; font-size: 13px; color: var(--muted);">
             ${logged
-              ? `<span style="color: #28C77A; font-weight: bold;">● Conectado</span> a <b>${broker.broker}</b> (${broker.email})`
-              : `<span style="color: #F0455C;">● Não conectado</span>`}
+              ? `<span class="pill"><span style="background: var(--green); width:8px;height:8px;border-radius:50%;display:inline-block;"></span> Conectado</span>
+                 <div style="margin-top:10px; font-size:13px; color: var(--text);">${broker.broker} <span style="color: var(--muted);">(${broker.email})</span></div>`
+              : `<span class="pill"><span style="background: var(--red); width:8px;height:8px;border-radius:50%;display:inline-block;"></span> Não conectado</span>`}
           </div>
-
           <form id="broker-form" style="text-align: left; ${logged ? 'display: none;' : ''}">
             <div>
               <label class="text-sm" style="margin-bottom: 6px;">Corretora</label>
@@ -175,10 +216,9 @@
               <input type="password" id="broker-password" class="input-field" placeholder="senha da corretora" />
             </div>
             <div id="broker-error" class="error-box hidden"></div>
-            <button type="submit" class="btn btn-green" style="margin-top: 6px;">LOGAR NA CORRETORA</button>
+            <button type="submit" class="btn btn-blue" style="margin-top: 6px;">LOGAR NA CORRETORA</button>
           </form>
-
-          <button id="broker-change" style="width: 100%; padding: 12px; font-weight: bold; font-size: 14px; border-radius: 12px; cursor: pointer; background: transparent; color: #28C77A; border: 1px solid #28C77A; margin-top: 6px; ${logged ? '' : 'display: none;'}">Trocar corretora</button>
+          <button id="broker-change" class="btn btn-blue" style="background:transparent; border:1px solid var(--primary); color: var(--primary); margin-top: 6px; ${logged ? '' : 'display: none;'}">Trocar corretora</button>
         </div>
       `;
     }
@@ -190,18 +230,14 @@
       const password = document.getElementById("broker-password").value;
       const errEl = document.getElementById("broker-error");
       errEl.classList.add("hidden");
-
       try {
-        const res = await apiFetch("/broker", {
-          method: "POST",
-          body: { broker, email, password }
-        });
+        const res = await apiFetch("/broker", { method: "POST", body: { broker, email, password } });
         if (res && res.success === false) throw new Error(res.error);
         localStorage.setItem("broker", res.broker || broker);
-
         const stateEl = document.getElementById("broker-state");
         if (stateEl) {
-          stateEl.innerHTML = `<span style="color: #28C77A; font-weight: bold;">● Conectado</span> a <b>${res.broker || broker}</b> (${email})`;
+          stateEl.innerHTML = `<span class="pill"><span style="background: var(--green); width:8px;height:8px;border-radius:50%;display:inline-block;"></span> Conectado</span>
+            <div style="margin-top:10px; font-size:13px; color: var(--text);">${res.broker || broker} <span style="color: var(--muted);">(${email})</span></div>`;
         }
         const formEl = document.getElementById("broker-form");
         if (formEl) formEl.style.display = "none";
@@ -218,11 +254,7 @@
 
     async function loadDashboardData() {
       const token = getToken();
-      if (!token) {
-        renderLoginScreen();
-        return;
-      }
-
+      if (!token) { renderLoginScreen(); return; }
       try {
         const res = await apiFetch("/status", { token });
         const status = {
@@ -237,35 +269,39 @@
           events: Array.isArray(res.events) ? res.events : [],
           broker: res.broker || null
         };
-
+        buildBalanceHistory(status);
         updateDashboardUI(status);
       } catch (err) {
         console.error("Erro ao buscar status:", err);
         if (err.message.includes("401") || err.message.includes("403") || err.message.includes("jwt") || err.message.includes("Unauthorized")) {
-          removeToken();
-          renderLoginScreen();
+          removeToken(); renderLoginScreen();
         }
       }
+    }
+
+    function buildBalanceHistory(status) {
+      // Reconstrói a série de saldo a partir dos eventos win/loss ("Saldo R$ X")
+      const points = [Number(status.initial_balance) || 1000];
+      (status.events || []).forEach(ev => {
+        if (ev.kind !== 'win' && ev.kind !== 'loss') return;
+        const m = (ev.message || '').match(/Saldo R\$\s*([\d.,]+)/i);
+        if (m) points.push(parseFloat(m[1].replace(/\./g, '').replace(',', '.')));
+      });
+      if (points.length > 1) balanceHistory = points;
     }
 
     async function toggleBot() {
       const token = getToken();
       const btn = document.getElementById("btn-toggle");
-      if (btn) {
-        btn.textContent = "Aguarde...";
-        btn.disabled = true;
-      }
-
+      if (btn) { btn.textContent = "Aguarde..."; btn.disabled = true; }
       try {
         const statusData = await apiFetch("/status", { token });
         const isRunning = statusData.running === true || statusData.status === 'LIGADO' || statusData.running === 'true';
-
         const path = isRunning ? "/stop" : "/start";
         const select = document.getElementById("pair-select");
         const selectedPair = select ? select.value : undefined;
         await apiFetch(path, {
-          method: "POST",
-          token,
+          method: "POST", token,
           body: path === "/start" && selectedPair ? { asset: selectedPair } : undefined
         });
         await loadDashboardData();
@@ -275,69 +311,110 @@
       }
     }
 
+    function renderChart() {
+      const wrap = document.getElementById("chart-wrap");
+      if (!wrap) return;
+      const data = balanceHistory.length ? balanceHistory : [1000];
+      const w = 760, h = 150, pad = 8;
+      let min = Math.min(...data), max = Math.max(...data);
+      if (min === max) { min -= 1; max += 1; }
+      const range = max - min;
+      const px = (i) => pad + (i / (data.length - 1)) * (w - pad * 2);
+      const py = (v) => h - pad - ((v - min) / range) * (h - pad * 2);
+      const line = data.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(" ");
+      const area = `M${pad},${h - pad} L${line.replace(/ /g, ' L')} L${w - pad},${h - pad} Z`;
+      const up = data[data.length - 1] >= data[0];
+      const col = up ? "#10b981" : "#f43f5e";
+      const last = data[data.length - 1];
+      wrap.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h2 style="margin:0; font-size:15px; font-weight:700;">Desempenho</h2>
+          <div style="font-size:13px; color:${col}; font-weight:700; font-variant-numeric:tabular-nums;">${money(last)}</div>
+        </div>
+        <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:auto; display:block;">
+          <defs>
+            <linearGradient id="gfill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${col}" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="${area}" fill="url(#gfill)"/>
+          <polyline points="${line}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="${px(data.length-1).toFixed(1)}" cy="${py(last).toFixed(1)}" r="4" fill="${col}"/>
+        </svg>
+      `;
+    }
+
     function updateDashboardUI(status) {
       const profit = (status.current_balance - status.initial_balance).toFixed(2);
       const profitClass = profit >= 0 ? "text-green" : "text-red";
       const statusColor = status.running ? "text-green" : "text-sm";
       const btnClass = status.running ? "btn-red" : "btn-green";
       const btnText = status.running ? "PARAR BOT" : "INICIAR BOT";
+      const totalOps = status.wins + status.losses;
+      const accuracy = totalOps > 0 ? Math.round((status.wins / totalOps) * 100) : 0;
 
-      // Se o container principal ainda não tem a estrutura do dashboard, monta ela
       if (!document.getElementById("btn-toggle")) {
         document.getElementById("app").innerHTML = `
           <header>
-            <div>
-              <h1 style="margin: 0; font-size: 18px;">MAXIMUS BOT</h1>
-              <span id="bot-status-text" style="margin-top: 4px;">● Parado</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="logo-dot"></span>
+              <h1 style="margin:0; font-size:17px; font-weight:900;">MAXIMUS BOT</h1>
+              <span id="bot-status-text" class="pill" style="margin-left:4px;">● Parado</span>
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button id="home-btn" class="logout-btn">Início</button>
-              <button id="logout-btn" class="logout-btn">Sair</button>
+            <div style="display:flex; gap:8px;">
+              <button id="home-btn" class="btn-ghost">Início</button>
+              <button id="logout-btn" class="btn-ghost">Sair</button>
             </div>
           </header>
 
-          <div class="grid-3">
-            <div class="stat-box">
+          <div class="grid-stats">
+            <div class="stat-box neutral">
               <span class="text-sm">Saldo Atual</span>
-              <span id="val-balance" class="text-lg">R$ 1000</span>
+              <div id="val-balance" class="stat-value">${money(status.current_balance)}</div>
             </div>
-            <div class="stat-box">
+            <div class="stat-box ${profit >= 0 ? 'green' : 'red'}">
               <span class="text-sm">Lucro / Prejuízo</span>
-              <span id="val-profit" class="text-lg">R$ 0.00</span>
+              <div id="val-profit" class="stat-value ${profitClass}">${profit >= 0 ? '+' : ''}${money(profit)}</div>
             </div>
-            <div class="stat-box">
-              <span class="text-sm">Placar (W / L)</span>
-              <span id="val-score" class="text-lg">
-                <span class="text-green">0</span> / <span class="text-red">0</span>
-              </span>
+            <div class="stat-box green">
+              <span class="text-sm">Vitórias</span>
+              <div id="val-wins" class="stat-value">${status.wins}</div>
+            </div>
+            <div class="stat-box red">
+              <span class="text-sm">Derrotas</span>
+              <div id="val-losses" class="stat-value">${status.losses}</div>
+            </div>
+            <div class="stat-box blue">
+              <span class="text-sm">Precisão</span>
+              <div id="val-accuracy" class="stat-value">${accuracy}%</div>
             </div>
           </div>
 
-          <div class="card" style="text-align: center;">
-            <h2 style="font-size: 14px; color: #7C8AA5; margin-top: 0; margin-bottom: 16px;">Status da Operação</h2>
-            <div id="engine-error" class="error-box hidden"></div>
+          <div class="card" style="margin-bottom:16px;">
+            <div id="chart-wrap" class="chart-wrap"></div>
+          </div>
 
+          <div class="card" style="text-align:center;">
+            <div id="engine-error" class="error-box hidden"></div>
             <div style="margin-bottom: 16px;">
               <label class="text-sm" style="margin-bottom: 6px;">Par de operação</label>
               <select id="pair-select" class="input-field" style="max-width: 250px; margin: 0 auto;">
                 ${AVAILABLE_PAIRS.map(p => `<option value="${p}" ${status.asset === p ? 'selected' : ''}>${p}</option>`).join("")}
               </select>
-              <div class="text-sm" style="margin-top: 8px; color: #7C8AA5;">
+              <div class="text-sm" style="margin-top: 8px; color: var(--muted);">
                 Pares com <b>-OTC</b> ficam abertos fora do horário tradicional (mercado estendido 24h).
               </div>
             </div>
-
-            <button id="btn-toggle" class="btn btn-green" style="max-width: 250px; padding: 14px 24px; border-radius: 9999px;">
-              INICIAR BOT
-            </button>
+            <button id="btn-toggle" class="btn ${btnClass}" style="max-width: 250px; padding: 14px 24px; border-radius: 9999px;">${btnText}</button>
           </div>
 
           ${renderBrokerSection(status.broker)}
 
           <div class="card" style="margin-top: 16px;">
-            <h2 style="font-size: 14px; color: #7C8AA5; margin-top: 0; margin-bottom: 16px;">Histórico da Operação</h2>
+            <h2 style="font-size: 15px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">Histórico da Operação</h2>
             <div id="op-log" style="max-height: 320px; overflow-y: auto; text-align: left; font-size: 12px;">
-              <div style="color: #7C8AA5; padding: 8px 0;">Sem eventos ainda.</div>
+              <div style="color: var(--muted); padding: 8px 0;">Sem eventos ainda.</div>
             </div>
           </div>
         `;
@@ -345,10 +422,8 @@
         const homeBtn = document.getElementById("home-btn");
         if (homeBtn) homeBtn.addEventListener("click", renderHomeScreen);
         document.getElementById("btn-toggle").addEventListener("click", toggleBot);
-
         const brokerForm = document.getElementById("broker-form");
         if (brokerForm) brokerForm.addEventListener("submit", handleBrokerLogin);
-
         const brokerChange = document.getElementById("broker-change");
         if (brokerChange) {
           brokerChange.addEventListener("click", () => {
@@ -357,40 +432,32 @@
             brokerChange.style.display = "none";
           });
         }
-
-        // Define o par selecionado conforme o pares ativo do servidor
         const pairSelect = document.getElementById("pair-select");
-        if (pairSelect && AVAILABLE_PAIRS.includes(status.asset)) {
-          pairSelect.value = status.asset;
-        }
-        // Desabilita a troca de par enquanto o bot estiver operando
+        if (pairSelect && AVAILABLE_PAIRS.includes(status.asset)) pairSelect.value = status.asset;
         pairSelect.disabled = !!status.running;
       }
 
-      // Atualiza os valores na tela sem recriar os elementos (evita piscar)
-      document.getElementById("val-balance").textContent = `R$ ${status.current_balance}`;
+      document.getElementById("val-balance").textContent = money(status.current_balance);
       const profitEl = document.getElementById("val-profit");
-      profitEl.textContent = `R$ ${profit}`;
-      profitEl.className = `text-lg ${profitClass}`;
+      profitEl.textContent = `${profit >= 0 ? '+' : ''}${money(profit)}`;
+      profitEl.className = `stat-value ${profitClass}`;
+      document.getElementById("val-wins").textContent = status.wins;
+      document.getElementById("val-losses").textContent = status.losses;
+      document.getElementById("val-accuracy").textContent = `${accuracy}%`;
 
-      document.getElementById("val-score").innerHTML = `<span class="text-green">${status.wins}</span> / <span class="text-red">${status.losses}</span>`;
-      
       const statusTextEl = document.getElementById("bot-status-text");
       statusTextEl.textContent = `● ${status.running ? "Operando" : "Parado"}`;
       statusTextEl.className = status.running ? "text-green" : "text-sm";
+      if (!status.running) statusTextEl.style.color = "var(--muted)";
 
       const btnToggle = document.getElementById("btn-toggle");
       btnToggle.className = `btn ${btnClass}`;
       btnToggle.textContent = btnText;
       btnToggle.disabled = false;
 
-      // Reabilita (ou bloqueia) a troca de par conforme o estado do bot
       const pairSelect = document.getElementById("pair-select");
-      if (pairSelect) {
-        pairSelect.disabled = !!status.running;
-      }
+      if (pairSelect) pairSelect.disabled = !!status.running;
 
-      // Mostra (ou esconde) o aviso de falha do motor de sinais
       const errEl = document.getElementById("engine-error");
       if (errEl) {
         if (status.lastEngineError) {
@@ -402,31 +469,28 @@
         }
       }
 
-      // Renderiza o histórico de eventos
+      renderChart();
       renderEventLog(status.events || []);
     }
 
     function renderEventLog(events) {
       const logEl = document.getElementById("op-log");
       if (!logEl) return;
-
       if (!events.length) {
-        logEl.innerHTML = `<div style="color: #7C8AA5; padding: 8px 0;">Sem eventos ainda.</div>`;
+        logEl.innerHTML = `<div style="color: var(--muted); padding: 8px 0;">Sem eventos ainda.</div>`;
         return;
       }
-
-      const colors = { win: "#28C77A", loss: "#F0455C", info: "#7C8AA5", error: "#F0455C" };
+      const colors = { win: "#10b981", loss: "#f43f5e", info: "#a1aab5", error: "#f43f5e" };
       const labels = { win: "WIN", loss: "LOSS", info: "INFO", error: "ERRO" };
-
       logEl.innerHTML = events.slice().reverse().map(ev => {
-        const color = colors[ev.kind] || "#7C8AA5";
+        const color = colors[ev.kind] || "#a1aab5";
         const tag = labels[ev.kind] || ev.kind;
         const d = ev.time ? new Date(ev.time) : null;
         const time = d ? `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString('pt-BR')}` : '';
-        return `<div style="display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #141C2E; align-items: baseline;">
-          <span style="color: #4E5D78; white-space: nowrap; font-size: 11px;">${time}</span>
-          <span style="color: ${color}; font-weight: bold; white-space: nowrap; font-size: 11px;">${tag}</span>
-          <span style="color: #C3CDE0;">${ev.message || ''}</span>
+        return `<div style="display:flex; gap:8px; padding:7px 0; border-bottom:1px solid #141c2e; align-items:baseline;">
+          <span style="color:#4e5d78; white-space:nowrap; font-size:11px;">${time}</span>
+          <span style="color:${color}; font-weight:700; white-space:nowrap; font-size:11px;">${tag}</span>
+          <span style="color:#c6d0e0;">${ev.message || ''}</span>
         </div>`;
       }).join("");
     }
@@ -437,13 +501,9 @@
       refreshInterval = setInterval(loadDashboardData, 5000);
     }
 
-    // Inicialização ao carregar a página
     window.addEventListener("DOMContentLoaded", () => {
-      if (getToken()) {
-        renderHomeScreen();
-      } else {
-        renderLoginScreen();
-      }
+      if (getToken()) renderHomeScreen();
+      else renderLoginScreen();
     });
   </script>
 </body>
