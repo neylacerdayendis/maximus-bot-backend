@@ -132,16 +132,15 @@
 
       try {
         const res = await apiFetch("/status", { token });
-        const s = res.status || res;
         const status = {
-          running: s.running === true || s.status === 'LIGADO' || s.running === 'true',
-          initial_balance: s.initial_balance ?? 1000,
-          current_balance: s.current_balance ?? s.saldo ?? 1000,
-          wins: s.wins ?? 0,
-          losses: s.losses ?? 0,
-          asset: (s.asset || s.asset_pair || 'EURUSD').toUpperCase(),
-          lastEngineError: s.lastEngineError ?? null,
-          lastErrorAt: s.lastErrorAt ?? null
+          running: res.running === true || res.status === 'LIGADO' || res.running === 'true',
+          initial_balance: res.initial_balance ?? 1000,
+          current_balance: res.current_balance ?? res.saldo ?? 1000,
+          wins: res.wins ?? 0,
+          losses: res.losses ?? 0,
+          asset: (res.asset || res.asset_pair || 'EURUSD').toUpperCase(),
+          lastEngineError: res.lastEngineError ?? null,
+          lastErrorAt: res.lastErrorAt ?? null
         };
 
         updateDashboardUI(status);
@@ -164,8 +163,7 @@
 
       try {
         const statusData = await apiFetch("/status", { token });
-        const s = statusData.status || statusData;
-        const isRunning = s.running === true || s.status === 'LIGADO' || s.running === 'true';
+        const isRunning = statusData.running === true || statusData.status === 'LIGADO' || statusData.running === 'true';
 
         const path = isRunning ? "/stop" : "/start";
         const select = document.getElementById("pair-select");

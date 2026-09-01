@@ -80,8 +80,7 @@
 
       try {
         const statusData = await apiFetch("/status", { token });
-        const s = statusData.status || statusData;
-        const isRunning = s.running === true || s.status === 'LIGADO' || s.running === 'true';
+        const isRunning = statusData.running === true || statusData.status === 'LIGADO' || statusData.running === 'true';
 
         const path = isRunning ? "/stop" : "/start";
         await apiFetch(path, { method: "POST", token });
@@ -102,13 +101,12 @@
       let status = { running: false, initial_balance: 1000, current_balance: 1000, wins: 0, losses: 0 };
       try {
         const res = await apiFetch("/status", { token });
-        const s = res.status || res;
         status = {
-          running: s.running === true || s.status === 'LIGADO' || s.running === 'true',
-          initial_balance: s.initial_balance ?? 1000,
-          current_balance: s.current_balance ?? s.saldo ?? 1000,
-          wins: s.wins ?? 0,
-          losses: s.losses ?? 0
+          running: res.running === true || res.status === 'LIGADO' || res.running === 'true',
+          initial_balance: res.initial_balance ?? 1000,
+          current_balance: res.current_balance ?? res.saldo ?? 1000,
+          wins: res.wins ?? 0,
+          losses: res.losses ?? 0
         };
       } catch (err) {
         console.error("Erro ao buscar status", err);
