@@ -18,6 +18,14 @@ let lastErrorAt = null;
 // Par atualmente ativo (selecionado no painel)
 let currentAsset = process.env.BOT_ASSET || 'EURUSD';
 
+// Lista de pares analisados simultaneamente
+const DEFAULT_ASSETS = [
+  'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'USDCHF'
+];
+let currentAssets = process.env.BOT_ASSETS
+  ? String(process.env.BOT_ASSETS).split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
+  : [...DEFAULT_ASSETS];
+
 // Conta atualmente ativa (PRACTICE/REAL)
 let currentAccountType = process.env.BOT_ACCOUNT_TYPE || 'PRACTICE';
 
@@ -130,6 +138,7 @@ router.get('/status', async (req, res) => {
     current_balance: data.saldo,
     initial_balance: data.initial_balance,
     asset: currentAsset,
+    assets: currentAssets,
     accountType: currentAccountType,
     stake: currentStake,
     expiration: currentExpiration,
@@ -162,6 +171,17 @@ router.post('/start', async (req, res) => {
   // Permite escolher o par pelo painel (ex.: EURUSD, GBPUSD...)
   const selectedAsset = req.body && typeof req.body.asset === 'string' ? req.body.asset.trim().toUpperCase() : null;
   const asset = selectedAsset || process.env.BOT_ASSET || 'EURUSD';
+
+  // Permite escolher vários pares ao mesmo tempo (lista separada por vírgula
+  // ou array). Se não informar, mantém apenas o par selecionado.
+  let selectedAssets = null;
+  if (req.body && Array.isArray(req.body.assets) && req.body.assets.length) {
+    selectedAssets = req.body.assets.map(a => String(a).trim().toUpperCase()).filter(Boolean);
+  } else if (req.body && typeof req.body.assets === 'string') {
+    selectedAssets = req.body.assets.split(',').map(a => a.trim().toUpperCase()).filter(Boolean);
+  }
+  const assets = selectedAssets || [asset];
+  currentAssets = assets;
 
   // Valor da ordem (stake) e expiração escolhidos no painel (fallback: env)
   const rawStake = req.body && req.body.stake != null ? Number(req.body.stake) : NaN;
@@ -202,10 +222,14 @@ router.post('/start', async (req, res) => {
   try {
     stopTraderFn = await startTrader({
       userId: 'default',
+      assets,
       asset,
       stake,
       expiration,
       accountType,
+      onSignal: (sig) => {
+        addEvent('info', `Sinal ${String(sig.direction).toUpperCase()} em ${sig.asset}`);
+      },
       onResult: (result) => {
         const current = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : {};
         current.wins = (current.wins || 0) + ((result.win && result.status !== 'draw') ? 1 : 0);
@@ -272,7 +296,7 @@ currentOrder = null;
 
     lastEngineError = null;
     lastErrorAt = null;
-    addEvent('info', `Bot iniciado no par ${asset}`);
+    addEvent('info', `Bot iniciado analisando ${assets.length} par(es): ${assets.join(', ')}`);
 
     res.json({ success: true, status: 'LIGADO', message: 'Bot ligado com sucesso!' });
   } catch (err) {

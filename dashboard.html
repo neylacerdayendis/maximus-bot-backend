@@ -448,10 +448,9 @@
               <p id="hero-sub" class="hero-sub">&nbsp;</p>
               <div id="engine-error" class="error-box hidden"></div>
               <div class="pair-row">
-                <label for="pair-select">Par</label>
-                <select id="pair-select" class="pair-select">
-                  ${AVAILABLE_PAIRS.map(p => `<option value="${p}" ${(status.asset || '').toUpperCase() === p ? 'selected' : ''}>${p}</option>`).join("")}
-                </select>
+                <label for="pair-input">Pares (vírgula)</label>
+                <input type="text" id="pair-input" class="pair-select" style="width:260px;" placeholder="EURUSD, GBPUSD, USDJPY..."
+                  value="${(status.assets && status.assets.length ? status.assets : [status.asset || 'EURUSD']).join(', ')}" />
                 <label for="account-select" style="margin-left:12px;">Conta</label>
                 <select id="account-select" class="pair-select">
                   <option value="PRACTICE" ${(status.accountType || 'PRACTICE') === 'PRACTICE' ? 'selected' : ''}>PRACTICE (Demo)</option>
@@ -583,9 +582,11 @@
     const heroStatus = document.getElementById("hero-status");
     heroStatus.textContent = running ? "Bot operando" : "Bot parado";
     heroStatus.classList.toggle("running", running);
+
+    const pairCount = (status.assets && status.assets.length) || (status.asset ? 1 : 0);
     document.getElementById("hero-sub").innerHTML = running
-      ? `Analisando <b>${status.asset || "—"}</b> · a cada 5s`
-      : `Clique para iniciar a leitura em <b>${status.asset || "—"}</b>`;
+      ? `Analisando <b>${pairCount}</b> par(es) · ciclos de 5s`
+      : `Inicie para analisar <b>${pairCount}</b> par(es) em tempo real`;
 
     const errEl = document.getElementById("engine-error");
     if (status.lastEngineError) {
@@ -595,11 +596,11 @@
       errEl.classList.add("hidden");
     }
 
-    const pairSelect = document.getElementById("pair-select");
-    if (pairSelect) {
-      pairSelect.disabled = !!running;
-      if (!running && status.asset && AVAILABLE_PAIRS.includes(status.asset.toUpperCase())) {
-        pairSelect.value = status.asset.toUpperCase();
+    const pairInput = document.getElementById("pair-input");
+    if (pairInput) {
+      pairInput.disabled = !!running;
+      if (!running && status.assets && status.assets.length) {
+        pairInput.value = status.assets.join(", ");
       }
     }
     const accountSelect = document.getElementById("account-select");
@@ -749,20 +750,22 @@
       const statusData = await apiFetch("/status", { token });
       const isRunning = statusData.running === true || statusData.status === 'LIGADO' || statusData.running === 'true';
       const path = isRunning ? "/stop" : "/start";
-      const select = document.getElementById("pair-select");
+      const pairInput = document.getElementById("pair-input");
       const accountSelect = document.getElementById("account-select");
       const stakeInput = document.getElementById("stake-input");
       const expirySelect = document.getElementById("expiry-select");
       const tpInput = document.getElementById("tp-input");
       const slInput = document.getElementById("sl-input");
-      const selectedPair = select ? select.value : undefined;
+      const selectedPair = pairInput
+        ? String(pairInput.value).split(",").map(s => s.trim().toUpperCase()).filter(Boolean)
+        : undefined;
       const accountType = accountSelect ? accountSelect.value : "PRACTICE";
       const stake = stakeInput ? Number(stakeInput.value) : undefined;
       const expiration = expirySelect ? Number(expirySelect.value) : undefined;
       const takeProfit = tpInput && tpInput.value !== "" ? Number(tpInput.value) : undefined;
       const stopLoss = slInput && slInput.value !== "" ? Number(slInput.value) : undefined;
       const body = path === "/start"
-        ? { asset: selectedPair, account_type: accountType, stake, expiration, take_profit: takeProfit, stop_loss: stopLoss }
+        ? { assets: selectedPair, asset: selectedPair && selectedPair[0], account_type: accountType, stake, expiration, take_profit: takeProfit, stop_loss: stopLoss }
         : undefined;
       await apiFetch(path, { method: "POST", token, body });
       await loadDashboardData();

@@ -2,7 +2,11 @@ const { checkSignal } = require("./signal-engine");
 const { buy, getOrderResult } = require("./broker-client");
 const { fetchBalance } = require("./candle-client");
 
-async function startTrader({ userId, asset, stake, expiration, accountType, onResult, onError, onOrderPlaced, onOrderClosed, minEntryInterval }) {
+async function startTrader({ userId, assets, asset, stake, expiration, accountType, onResult, onError, onOrderPlaced, onOrderClosed, onSignal, minEntryInterval }) {
+  const pairs = Array.isArray(assets) && assets.length
+    ? assets.map((a) => String(a).toUpperCase())
+    : [String(asset || "EURUSD").toUpperCase()];
+
   let active = true;
   let lastEntryAt = 0;
 
@@ -14,7 +18,7 @@ async function startTrader({ userId, asset, stake, expiration, accountType, onRe
   );
 
   // Resolve o resultado de uma ordem aberta e reporta via onResult
-  async function settleOrder(orderId, direction) {
+  async function settleOrder(orderId, direction, pair) {
     if (!active) return;
     try {
       // Espera a ordem expirar antes de consultar (check_win_v4 bloqueia até lá)
@@ -34,9 +38,9 @@ async function startTrader({ userId, asset, stake, expiration, accountType, onRe
         // se falhar, deixa balance = null e o backend calcula virtualmente
       }
 
-      console.log(`[Trader User ${userId}] Ordem ${res.status.toUpperCase()}: ${direction} ${asset} id=${orderId} profit=${profit} balance=${balance}`);
+      console.log(`[Trader User ${userId}] Ordem ${res.status.toUpperCase()}: ${direction} ${pair} id=${orderId} profit=${profit} balance=${balance}`);
       if (onResult) {
-        onResult({ asset, action: direction, win, profit, orderId, status: res.status, balance });
+        onResult({ asset: pair, action: direction, win, profit, orderId, status: res.status, balance });
       }
       if (onOrderClosed) onOrderClosed({ orderId, status: res.status });
     } catch (err) {
@@ -47,23 +51,31 @@ async function startTrader({ userId, asset, stake, expiration, accountType, onRe
   const interval = setInterval(async () => {
     if (!active) return;
 
-    const signal = await checkSignal(asset, onError);
     const now = Date.now();
-    if (signal && now - lastEntryAt >= minIntervalMs) {
-      lastEntryAt = now;
-      const direction = signal === "put" ? "put" : "call";
-      console.log(`[Trader User ${userId}] Sinal detectado: ${signal} para ${asset} - abrindo ordem`);
+    if (now - lastEntryAt < minIntervalMs) return;
 
-      try {
-        const order = await buy(asset, direction, stake, expiration, accountType);
-        if (!active) return;
-        const startedAt = Date.now();
-        const expiresAt = startedAt + Number(expiration || 1) * 60 * 1000;
-        console.log(`[Trader User ${userId}] Ordem aberta id=${order.order_id} (${direction} ${asset} valor=${stake})`);
-        if (onOrderPlaced) onOrderPlaced({ orderId: order.order_id, asset, direction, stake, startedAt, expiresAt });
-        settleOrder(order.order_id, direction);
-      } catch (err) {
-        if (onError) onError(new Error(`Falha ao abrir ordem: ${err.message}`));
+    for (const pair of pairs) {
+      if (!active) return;
+
+      const signal = await checkSignal(pair, onError);
+      if (signal && active && Date.now() - lastEntryAt >= minIntervalMs) {
+        lastEntryAt = Date.now();
+        const direction = signal === "put" ? "put" : "call";
+        console.log(`[Trader User ${userId}] Sinal ${signal} em ${pair} - abrindo ordem`);
+        if (onSignal) onSignal({ asset: pair, direction, signal });
+
+        try {
+          const order = await buy(pair, direction, stake, expiration, accountType);
+          if (!active) return;
+          const startedAt = Date.now();
+          const expiresAt = startedAt + Number(expiration || 1) * 60 * 1000;
+          console.log(`[Trader User ${userId}] Ordem aberta id=${order.order_id} (${direction} ${pair} valor=${stake})`);
+          if (onOrderPlaced) onOrderPlaced({ orderId: order.order_id, asset: pair, direction, stake, startedAt, expiresAt });
+          settleOrder(order.order_id, direction, pair);
+        } catch (err) {
+          if (onError) onError(new Error(`Falha ao abrir ordem em ${pair}: ${err.message}`));
+        }
+        break;
       }
     }
   }, 5000);
