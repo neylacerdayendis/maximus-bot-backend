@@ -232,7 +232,7 @@ def place_order():
         }), 403
 
     try:
-        client = switch_account(account_type)
+        client, _ = switch_account(account_type)
         check, order_id = client.buy(amount, pair, direction, expiration)
         if not check:
             return jsonify({"error": f"Falha ao abrir ordem: {order_id}"}), 500
