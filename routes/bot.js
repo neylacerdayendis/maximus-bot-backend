@@ -166,6 +166,19 @@ router.post('/start', async (req, res) => {
   currentAsset = asset;
   currentAccountType = accountType;
 
+  // Define o saldo inicial a partir do saldo real da IQ Option (se possível)
+  let initialSaldo = Number(rawData.saldo ?? rawData.initial_balance ?? 1000);
+  try {
+    const bal = await fetchBalance(accountType);
+    if (bal && typeof bal.balance === 'number' && isFinite(bal.balance)) {
+      initialSaldo = bal.balance;
+      rawData.saldo = bal.balance;
+      rawData.initial_balance = bal.balance;
+    }
+  } catch (e) {
+    // se falhar, mantém o saldo salvo
+  }
+
   try {
     stopTraderFn = await startTrader({
       userId: 'default',
@@ -177,7 +190,12 @@ router.post('/start', async (req, res) => {
         const current = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : {};
         current.wins = (current.wins || 0) + ((result.win && result.status !== 'draw') ? 1 : 0);
         current.losses = (current.losses || 0) + ((!result.win && result.status !== 'draw') ? 1 : 0);
-        current.saldo = (current.saldo ?? 1000) + result.profit;
+
+        // Tenta usar o saldo real da IQ como base; senão, calcula virtualmente
+        const saldoReal = result.balance != null && isFinite(result.balance)
+          ? result.balance
+          : ((current.saldo ?? 1000) + result.profit);
+        current.saldo = saldoReal;
         saveData(current);
 
         const label = result.status === 'draw' ? 'EMPATE' : (result.win ? 'WIN' : 'LOSS');

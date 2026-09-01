@@ -1,5 +1,6 @@
 const { checkSignal } = require("./signal-engine");
 const { buy, getOrderResult } = require("./broker-client");
+const { fetchBalance } = require("./candle-client");
 
 async function startTrader({ userId, asset, stake, expiration, accountType, onResult, onError, minEntryInterval }) {
   let active = true;
@@ -24,9 +25,18 @@ async function startTrader({ userId, asset, stake, expiration, accountType, onRe
       const win = res.status === "win";
       const profit = Number(res.profit || 0);
 
-      console.log(`[Trader User ${userId}] Ordem ${res.status.toUpperCase()}: ${direction} ${asset} id=${orderId} profit=${profit}`);
+      // Busca o saldo real da IQ após a operação (usado como base do painel)
+      let balance = null;
+      try {
+        const b = await fetchBalance(accountType);
+        if (b && typeof b.balance === 'number' && isFinite(b.balance)) balance = b.balance;
+      } catch (e) {
+        // se falhar, deixa balance = null e o backend calcula virtualmente
+      }
+
+      console.log(`[Trader User ${userId}] Ordem ${res.status.toUpperCase()}: ${direction} ${asset} id=${orderId} profit=${profit} balance=${balance}`);
       if (onResult) {
-        onResult({ asset, action: direction, win, profit, orderId, status: res.status });
+        onResult({ asset, action: direction, win, profit, orderId, status: res.status, balance });
       }
     } catch (err) {
       if (onError) onError(new Error(`Falha ao consultar ordem ${orderId}: ${err.message}`));
