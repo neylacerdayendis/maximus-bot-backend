@@ -33,6 +33,25 @@ function addEvent(kind, message) {
   }
 }
 
+// Estado da corretora logada (persistido em maximus.json, sem expor a senha ao painel)
+const BROKERS = ['IQ Option', 'Quotex', 'Binomo', 'Pocket Option', 'Expert Option'];
+
+function readBroker() {
+  if (!fs.existsSync(DATA_FILE)) return null;
+  try {
+    const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    return data.broker || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveBroker(broker) {
+  const data = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : {};
+  data.broker = broker;
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
 function readData() {
   if (!fs.existsSync(DATA_FILE)) return { botStatus: 'DESLIGADO', wins: 0, losses: 0, saldo: 1000, initial_balance: 1000 };
   const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
@@ -67,7 +86,8 @@ function saveData(data) {
 router.get('/status', (req, res) => {
   const data = readData();
   const isRunning = (data.botStatus === 'LIGADO' || data.botStatus === true);
-  
+  const broker = readBroker();
+
   res.json({
     running: isRunning,
     status: data.botStatus,
@@ -76,6 +96,11 @@ router.get('/status', (req, res) => {
     current_balance: data.saldo,
     initial_balance: data.initial_balance,
     asset: currentAsset,
+    broker: {
+      broker: broker ? broker.broker : null,
+      email: broker ? broker.email : null,
+      logged: !!(broker && broker.broker && broker.email)
+    },
     events,
     lastEngineError,
     lastErrorAt
@@ -153,6 +178,43 @@ router.post('/stop', (req, res) => {
   addEvent('info', 'Bot parado');
 
   res.json({ success: true, status: 'DESLIGADO', message: 'Bot desligado com sucesso!' });
+});
+
+// Rota para consultar a corretora logada (sem expor a senha)
+router.get('/broker', (req, res) => {
+  const b = readBroker();
+  res.json({
+    broker: b ? b.broker : null,
+    email: b ? b.email : null,
+    logged: !!(b && b.broker && b.email)
+  });
+});
+
+// Rota para salvar corretora e credenciais (a senha fica no servidor e não é devolvida)
+router.post('/broker', (req, res) => {
+  const { broker, email, password } = req.body || {};
+  const brokerName = BROKERS.includes(broker) ? broker : (typeof broker === 'string' ? broker : null);
+
+  if (!brokerName) {
+    return res.status(400).json({ success: false, error: 'Selecione uma corretora válida.' });
+  }
+  if (!email || !String(email).includes('@')) {
+    return res.status(400).json({ success: false, error: 'Informe um e-mail válido.' });
+  }
+  if (!password) {
+    return res.status(400).json({ success: false, error: 'Informe a senha da corretora.' });
+  }
+
+  saveBroker({
+    broker: brokerName,
+    email: String(email).trim(),
+    // Ofuscado: base64 reversível para uso pelo serviço, evita texto puro óbvio
+    password: Buffer.from(String(password)).toString('base64'),
+    loggedAt: new Date().toISOString()
+  });
+
+  addEvent('info', `Conectado à corretora ${brokerName} (${String(email).trim()})`);
+  res.json({ success: true, broker: brokerName, email: String(email).trim(), message: 'Corretora configurada com sucesso!' });
 });
 
 module.exports = router;
