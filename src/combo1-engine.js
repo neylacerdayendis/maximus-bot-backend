@@ -1,5 +1,6 @@
 function analyzeCandles(candles) {
-  if (!candles || candles.length < 3) return null;
+  if (Array.isArray(candles) && candles.candles) candles = candles.candles;
+  if (!Array.isArray(candles) || candles.length < 3) return null;
 
   const last = candles[candles.length - 1];
   const prev = candles[candles.length - 2];
