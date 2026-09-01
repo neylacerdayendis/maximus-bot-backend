@@ -9,6 +9,11 @@ const DATA_FILE = path.join(__dirname, '../data/maximus.json');
 // Guarda a função de parar o motor em execução (enquanto o processo estiver vivo)
 let stopTraderFn = null;
 
+// Guarda a última falha do motor (ex.: serviço de velas fora do ar) para
+// mostrar no painel e evitar o "bot não inicia" sem explicação.
+let lastEngineError = null;
+let lastErrorAt = null;
+
 function readData() {
   if (!fs.existsSync(DATA_FILE)) return { botStatus: 'DESLIGADO', wins: 0, losses: 0, saldo: 1000, initial_balance: 1000 };
   const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
@@ -50,7 +55,9 @@ router.get('/status', (req, res) => {
     wins: data.wins,
     losses: data.losses,
     current_balance: data.saldo,
-    initial_balance: data.initial_balance
+    initial_balance: data.initial_balance,
+    lastEngineError,
+    lastErrorAt
   });
 });
 
@@ -79,11 +86,19 @@ router.post('/start', async (req, res) => {
         current.losses = (current.losses || 0) + (result.win ? 0 : 1);
         current.saldo = (current.saldo ?? 1000) + result.profit;
         saveData(current);
+      },
+      onError: (err) => {
+        lastEngineError = err && err.message ? err.message : String(err);
+        lastErrorAt = new Date().toISOString();
+        console.error('[bot.js] Erro do motor:', lastEngineError);
       }
     });
 
     rawData.botStatus = 'LIGADO';
     saveData(rawData);
+
+    lastEngineError = null;
+    lastErrorAt = null;
 
     res.json({ success: true, status: 'LIGADO', message: 'Bot ligado com sucesso!' });
   } catch (err) {
@@ -102,6 +117,9 @@ router.post('/stop', (req, res) => {
     stopTraderFn();
     stopTraderFn = null;
   }
+
+  lastEngineError = null;
+  lastErrorAt = null;
 
   res.json({ success: true, status: 'DESLIGADO', message: 'Bot desligado com sucesso!' });
 });

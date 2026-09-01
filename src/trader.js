@@ -1,12 +1,12 @@
 const { checkSignal } = require("./signal-engine");
 
-async function startTrader({ userId, asset, stake, expiration, onResult }) {
+async function startTrader({ userId, asset, stake, expiration, onResult, onError }) {
   let active = true;
 
   const interval = setInterval(async () => {
     if (!active) return;
 
-    const signal = await checkSignal(asset);
+    const signal = await checkSignal(asset, onError);
     if (signal) {
       console.log(`[Trader User ${userId}] Sinal detectado: ${signal} para ${asset}`);
       // Simulação de resultado de entrada

@@ -134,7 +134,9 @@
           initial_balance: s.initial_balance ?? 1000,
           current_balance: s.current_balance ?? s.saldo ?? 1000,
           wins: s.wins ?? 0,
-          losses: s.losses ?? 0
+          losses: s.losses ?? 0,
+          lastEngineError: s.lastEngineError ?? null,
+          lastErrorAt: s.lastErrorAt ?? null
         };
 
         updateDashboardUI(status);
@@ -206,6 +208,7 @@
 
           <div class="card" style="text-align: center;">
             <h2 style="font-size: 14px; color: #7C8AA5; margin-top: 0; margin-bottom: 16px;">Status da Operação</h2>
+            <div id="engine-error" class="error-box hidden"></div>
             <button id="btn-toggle" class="btn btn-green" style="max-width: 250px; padding: 14px 24px; border-radius: 9999px;">
               INICIAR BOT
             </button>
@@ -231,6 +234,18 @@
       btnToggle.className = `btn ${btnClass}`;
       btnToggle.textContent = btnText;
       btnToggle.disabled = false;
+
+      // Mostra (ou esconde) o aviso de falha do motor de sinais
+      const errEl = document.getElementById("engine-error");
+      if (errEl) {
+        if (status.lastEngineError) {
+          const when = status.lastErrorAt ? ` (${new Date(status.lastErrorAt).toLocaleTimeString('pt-BR')})` : '';
+          errEl.textContent = "Motor de sinais com problema: " + status.lastEngineError + when;
+          errEl.classList.remove("hidden");
+        } else {
+          errEl.classList.add("hidden");
+        }
+      }
     }
 
     function initDashboard() {
