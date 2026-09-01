@@ -510,13 +510,24 @@
       logEl.innerHTML = events.slice().reverse().map(ev => {
         const color = colors[ev.kind] || "#a1aab5";
         const tag = labels[ev.kind] || ev.kind;
+        const msg = ev.message || '';
+        // extrai o par (a 2ª palavra da mensagem, ex: "WIN call EURUSD-OTC | ..." / "Bot iniciado no par EURUSD-OTC")
+        const m = msg.match(/(?:call|put)\s+([A-Z0-9-]+)/i) || msg.match(/par\s+([A-Z0-9-]+)/i) || msg.match(/\b([A-Z0-9]{5,}-OTC)\b/i) || msg.match(/\b([A-Z]{3,6}\d*)\b/i);
+        const pair = m ? m[1] : '—';
         const d = ev.time ? new Date(ev.time) : null;
-        const time = d ? `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString('pt-BR')}` : '';
-        return `<div style="display:flex; gap:8px; padding:7px 0; border-bottom:1px solid #141c2e; align-items:baseline;">
-          <span style="color:#4e5d78; white-space:nowrap; font-size:11px;">${time}</span>
-          <span style="color:${color}; font-weight:700; white-space:nowrap; font-size:11px;">${tag}</span>
-          <span style="color:#c6d0e0;">${ev.message || ''}</span>
-        </div>`;
+        const time = d ? `${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : '';
+        return `
+          <div style="background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:10px; padding:10px 12px; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="display:inline-flex; align-items:center; gap:6px; color:${color}; font-weight:800; font-size:12px; letter-spacing:.02em;">
+                <span style="width:7px; height:7px; border-radius:50%; background:${color}; display:inline-block;"></span>
+                ${tag}
+              </span>
+              <span style="color:#4e5d78; font-size:11px; font-variant-numeric:tabular-nums;">${time}</span>
+            </div>
+            <div style="color:#c6d0e0; font-size:13px; font-weight:700; letter-spacing:.03em;">${pair}</div>
+          </div>
+        `;
       }).join("");
     }
 
