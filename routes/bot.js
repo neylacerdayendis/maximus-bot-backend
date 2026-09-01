@@ -18,9 +18,9 @@ let lastErrorAt = null;
 // Par atualmente ativo (selecionado no painel)
 let currentAsset = process.env.BOT_ASSET || 'EURUSD';
 
-// Lista de pares analisados simultaneamente
+// Lista de pares analisados simultaneamente (OTC fica 24/7 no IQ Option)
 const DEFAULT_ASSETS = [
-  'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'USDCHF'
+  'EURUSD-OTC', 'GBPUSD-OTC', 'EURGBP-OTC', 'USDJPY-OTC', 'EURJPY-OTC', 'USDCHF-OTC'
 ];
 let currentAssets = process.env.BOT_ASSETS
   ? String(process.env.BOT_ASSETS).split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
@@ -230,6 +230,9 @@ router.post('/start', async (req, res) => {
       onSignal: (sig) => {
         addEvent('info', `Sinal ${String(sig.direction).toUpperCase()} em ${sig.asset}`);
       },
+      onInfo: (message) => {
+        addEvent('info', message);
+      },
       onResult: (result) => {
         const current = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : {};
         current.wins = (current.wins || 0) + ((result.win && result.status !== 'draw') ? 1 : 0);
@@ -284,10 +287,7 @@ router.post('/start', async (req, res) => {
         addEvent('info', `Ordem aberta: ${ord.direction.toUpperCase()} ${ord.asset} valor=R$${Number(ord.stake).toFixed(2)}`);
       },
       onOrderClosed: (ord) => {
-currentOrder = null;
-  currentTakeProfit = null;
-  currentStopLoss = null;
-  sessionStartBalance = null;
+  currentOrder = null;
       }
     });
 
@@ -316,6 +316,9 @@ router.post('/stop', (req, res) => {
     stopTraderFn = null;
   }
   currentOrder = null;
+  currentTakeProfit = null;
+  currentStopLoss = null;
+  sessionStartBalance = null;
 
   lastEngineError = null;
   lastErrorAt = null;

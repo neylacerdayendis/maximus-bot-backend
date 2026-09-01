@@ -2,13 +2,31 @@ const { checkSignal } = require("./signal-engine");
 const { buy, getOrderResult } = require("./broker-client");
 const { fetchBalance } = require("./candle-client");
 
-async function startTrader({ userId, assets, asset, stake, expiration, accountType, onResult, onError, onOrderPlaced, onOrderClosed, onSignal, minEntryInterval }) {
+// Tempo que um par fica de fora quando a corretora diz que está indisponível
+const UNAVAILABLE_COOLDOWN_MS = 5 * 60 * 1000;
+
+// Detecta a mensagem padrão da IQ Option quando o ativo não está negociável
+// (ex.: "Cannot purchase an option (the asset is not available at the moment)")
+function looksUnavailable(message) {
+  const m = String(message || "").toLowerCase();
+  return (
+    m.includes("not available") ||
+    m.includes("unavailable") ||
+    m.includes("cannot purchase") ||
+    m.includes("asset is not") ||
+    m.includes("mercado fechado") ||
+    m.includes("indispon")
+  );
+}
+
+async function startTrader({ userId, assets, asset, stake, expiration, accountType, onResult, onError, onOrderPlaced, onOrderClosed, onSignal, onInfo, minEntryInterval }) {
   const pairs = Array.isArray(assets) && assets.length
     ? assets.map((a) => String(a).toUpperCase())
     : [String(asset || "EURUSD").toUpperCase()];
 
   let active = true;
   let lastEntryAt = 0;
+  const cooldownUntil = new Map();
 
   // Intervalo mínimo (em ms) entre entradas. Nunca menor que a expiração,
   // para não sobrepor ordens abertas.
@@ -54,27 +72,43 @@ async function startTrader({ userId, assets, asset, stake, expiration, accountTy
     const now = Date.now();
     if (now - lastEntryAt < minIntervalMs) return;
 
+    // Reune os pares com sinal no momento (cache por par evita consultas extra)
+    const signaled = [];
     for (const pair of pairs) {
       if (!active) return;
-
+      if ((cooldownUntil.get(pair) || 0) > now) continue;
       const signal = await checkSignal(pair, onError);
-      if (signal && active && Date.now() - lastEntryAt >= minIntervalMs) {
+      if (signal && active) signaled.push({ pair, signal });
+    }
+    if (!signaled.length) return;
+
+    // Tenta abrir nos pares com sinal, pulando os indisponíveis na corretora
+    for (const { pair, signal } of signaled) {
+      if (!active) return;
+      if (Date.now() - lastEntryAt < minIntervalMs) break;
+
+      const direction = signal === "put" ? "put" : "call";
+      try {
+        const order = await buy(pair, direction, stake, expiration, accountType);
+        if (!active) return;
         lastEntryAt = Date.now();
-        const direction = signal === "put" ? "put" : "call";
-        console.log(`[Trader User ${userId}] Sinal ${signal} em ${pair} - abrindo ordem`);
+        console.log(`[Trader User ${userId}] Ordem aberta id=${order.order_id} (${direction} ${pair} valor=${stake})`);
         if (onSignal) onSignal({ asset: pair, direction, signal });
 
-        try {
-          const order = await buy(pair, direction, stake, expiration, accountType);
-          if (!active) return;
-          const startedAt = Date.now();
-          const expiresAt = startedAt + Number(expiration || 1) * 60 * 1000;
-          console.log(`[Trader User ${userId}] Ordem aberta id=${order.order_id} (${direction} ${pair} valor=${stake})`);
-          if (onOrderPlaced) onOrderPlaced({ orderId: order.order_id, asset: pair, direction, stake, startedAt, expiresAt });
-          settleOrder(order.order_id, direction, pair);
-        } catch (err) {
-          if (onError) onError(new Error(`Falha ao abrir ordem em ${pair}: ${err.message}`));
+        const startedAt = Date.now();
+        const expiresAt = startedAt + Number(expiration || 1) * 60 * 1000;
+        if (onOrderPlaced) onOrderPlaced({ orderId: order.order_id, asset: pair, direction, stake, startedAt, expiresAt });
+        settleOrder(order.order_id, direction, pair);
+        break;
+      } catch (err) {
+        const msg = err && err.message ? err.message : String(err);
+        if (looksUnavailable(msg)) {
+          cooldownUntil.set(pair, Date.now() + UNAVAILABLE_COOLDOWN_MS);
+          console.log(`[Trader User ${userId}] ${pair} indisponível na corretora - fora por 5 min`);
+          if (onInfo) onInfo(`${pair} indisponível na corretora - fora por 5 min`);
+          continue;
         }
+        if (onError) onError(new Error(`Falha ao abrir ordem em ${pair}: ${msg}`));
         break;
       }
     }
