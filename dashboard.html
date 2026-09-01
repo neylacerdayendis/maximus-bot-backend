@@ -90,6 +90,7 @@
     const API_BASE = "/api";
     let refreshInterval = null;
     let balanceHistory = [];
+    let selectedBroker = null;
 
     function getToken() { return localStorage.getItem("token"); }
     function setToken(t) { localStorage.setItem("token", t); }
@@ -161,10 +162,16 @@
               <input type="password" id="password" required class="input-field" placeholder="********" />
             </div>
             <button type="submit" class="btn btn-green">Entrar</button>
+            <button type="button" id="forgot-btn" class="btn" style="margin-top:10px; background:transparent; color:var(--primary); box-shadow:none;">Esqueceu a senha?</button>
           </form>
         </div>
       `;
       document.getElementById("login-form").addEventListener("submit", handleLogin);
+      document.getElementById("forgot-btn").addEventListener("click", handleForgotPassword);
+    }
+
+    function handleForgotPassword() {
+      alert("Entre em contato com o suporte para recuperar sua senha.");
     }
 
     function renderHomeScreen() {
@@ -189,60 +196,64 @@
 
     function renderBrokerSection(brokerStatus) {
       const broker = brokerStatus || {};
-      const logged = broker.logged && broker.broker && broker.email;
+      const current = broker.broker || null;
+      const connected = broker.logged && broker.broker && broker.email;
+      const items = AVAILABLE_BROKERS.map(b => {
+        const active = b === current;
+        return `
+          <button type="button" data-broker="${b}"
+            style="width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; margin-bottom:8px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600;
+              ${active
+                ? 'background:rgba(16,185,129,0.14); border:1px solid rgba(16,185,129,0.4); color:var(--green);'
+                : 'background:rgba(255,255,255,0.03); border:1px solid var(--border); color:var(--text);'}"
+            ${connected && active ? 'disabled' : ''}>
+            <span>${b}</span>
+            ${active
+              ? (connected ? '<span style="font-size:10px; color:var(--green);">● conectada</span>' : '<span style="font-size:10px; color:var(--warn);">selecionada</span>')
+              : '<span style="opacity:0.35;">+</span>'}
+          </button>
+        `;
+      }).join("");
+
       return `
-        <div class="card" style="margin-top: 16px;">
-          <h2 style="font-size: 15px; font-weight: 700; color: var(--text); margin-top: 0; margin-bottom: 16px;">Corretora</h2>
-          <div id="broker-state" style="margin-bottom: 14px; font-size: 13px; color: var(--muted);">
-            ${logged
-              ? `<span class="pill"><span style="background: var(--green); width:8px;height:8px;border-radius:50%;display:inline-block;"></span> Conectado</span>
-                 <div style="margin-top:10px; font-size:13px; color: var(--text);">${broker.broker} <span style="color: var(--muted);">(${broker.email})</span></div>`
-              : `<span class="pill"><span style="background: var(--red); width:8px;height:8px;border-radius:50%;display:inline-block;"></span> Não conectado</span>`}
-          </div>
-          <form id="broker-form" style="text-align: left; ${logged ? 'display: none;' : ''}">
+        <aside id="broker-sidebar" style="width:100%;">
+          <div style="font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:12px;">Corretora para operar</div>
+          <div id="broker-list">${items}</div>
+
+          <form id="broker-form" style="text-align:left; margin-top:4px; ${connected && current ? 'display:none;' : ''}">
             <div>
-              <label class="text-sm" style="margin-bottom: 6px;">Corretora</label>
-              <select id="broker-select" class="input-field">
-                <option value="">Selecione a corretora...</option>
-                ${AVAILABLE_BROKERS.map(b => `<option value="${b}" ${broker.broker === b ? 'selected' : ''}>${b}</option>`).join("")}
-              </select>
+              <label class="text-sm" style="margin-bottom:6px;">E-mail / Usuário</label>
+              <input type="text" id="broker-email" class="input-field" placeholder="seu@email.com" value="${current ? (broker.email || '') : ''}" />
             </div>
             <div>
-              <label class="text-sm" style="margin-bottom: 6px;">E-mail / Usuário</label>
-              <input type="text" id="broker-email" class="input-field" placeholder="seu@email.com" value="${broker.email || ''}" />
-            </div>
-            <div>
-              <label class="text-sm" style="margin-bottom: 6px;">Senha</label>
+              <label class="text-sm" style="margin-bottom:6px;">Senha</label>
               <input type="password" id="broker-password" class="input-field" placeholder="senha da corretora" />
             </div>
             <div id="broker-error" class="error-box hidden"></div>
-            <button type="submit" class="btn btn-blue" style="margin-top: 6px;">LOGAR NA CORRETORA</button>
+            <button type="submit" class="btn btn-blue" style="margin-top:4px;">${connected && current ? 'TORCAR' : 'LOGAR NESTA CORRETORA'}</button>
           </form>
-          <button id="broker-change" class="btn btn-blue" style="background:transparent; border:1px solid var(--primary); color: var(--primary); margin-top: 6px; ${logged ? '' : 'display: none;'}">Trocar corretora</button>
-        </div>
+        </aside>
       `;
     }
 
     async function handleBrokerLogin(e) {
       e.preventDefault();
-      const broker = document.getElementById("broker-select").value;
+      const broker = selectedBroker;
       const email = document.getElementById("broker-email").value.trim();
       const password = document.getElementById("broker-password").value;
       const errEl = document.getElementById("broker-error");
       errEl.classList.add("hidden");
+      if (!broker) {
+        errEl.textContent = "Selecione uma corretora na lateral.";
+        errEl.classList.remove("hidden");
+        return;
+      }
       try {
         const res = await apiFetch("/broker", { method: "POST", body: { broker, email, password } });
         if (res && res.success === false) throw new Error(res.error);
         localStorage.setItem("broker", res.broker || broker);
-        const stateEl = document.getElementById("broker-state");
-        if (stateEl) {
-          stateEl.innerHTML = `<span class="pill"><span style="background: var(--green); width:8px;height:8px;border-radius:50%;display:inline-block;"></span> Conectado</span>
-            <div style="margin-top:10px; font-size:13px; color: var(--text);">${res.broker || broker} <span style="color: var(--muted);">(${email})</span></div>`;
-        }
         const formEl = document.getElementById("broker-form");
         if (formEl) formEl.style.display = "none";
-        const changeBtn = document.getElementById("broker-change");
-        if (changeBtn) changeBtn.style.display = "";
         const pwEl = document.getElementById("broker-password");
         if (pwEl) pwEl.value = "";
         await loadDashboardData();
@@ -355,6 +366,9 @@
       const accuracy = totalOps > 0 ? Math.round((status.wins / totalOps) * 100) : 0;
 
       if (!document.getElementById("btn-toggle")) {
+        if (!selectedBroker) {
+          selectedBroker = (status.broker && status.broker.broker) || AVAILABLE_BROKERS[0];
+        }
         document.getElementById("app").innerHTML = `
           <header>
             <div style="display:flex; align-items:center; gap:10px;">
@@ -368,6 +382,12 @@
             </div>
           </header>
 
+          <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
+            <aside style="width:230px; flex:0 0 230px; max-width:100%;">
+              ${renderBrokerSection(status.broker)}
+            </aside>
+
+            <main style="flex:1; min-width:280px;">
           <div class="grid-stats">
             <div class="stat-box neutral">
               <span class="text-sm">Saldo Atual</span>
@@ -409,13 +429,13 @@
             <button id="btn-toggle" class="btn ${btnClass}" style="max-width: 250px; padding: 14px 24px; border-radius: 9999px;">${btnText}</button>
           </div>
 
-          ${renderBrokerSection(status.broker)}
-
           <div class="card" style="margin-top: 16px;">
             <h2 style="font-size: 15px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">Histórico da Operação</h2>
             <div id="op-log" style="max-height: 320px; overflow-y: auto; text-align: left; font-size: 12px;">
               <div style="color: var(--muted); padding: 8px 0;">Sem eventos ainda.</div>
             </div>
+          </div>
+            </main>
           </div>
         `;
         document.getElementById("logout-btn").addEventListener("click", handleLogout);
@@ -424,14 +444,23 @@
         document.getElementById("btn-toggle").addEventListener("click", toggleBot);
         const brokerForm = document.getElementById("broker-form");
         if (brokerForm) brokerForm.addEventListener("submit", handleBrokerLogin);
-        const brokerChange = document.getElementById("broker-change");
-        if (brokerChange) {
-          brokerChange.addEventListener("click", () => {
+        document.querySelectorAll("#broker-list [data-broker]").forEach(btn => {
+          if (btn.disabled) return;
+          btn.addEventListener("click", () => {
+            selectedBroker = btn.getAttribute("data-broker");
             const f = document.getElementById("broker-form");
             if (f) f.style.display = "";
-            brokerChange.style.display = "none";
+            const list = document.getElementById("broker-list");
+            if (list) {
+              list.querySelectorAll("[data-broker]").forEach(b => {
+                const active = b.getAttribute("data-broker") === selectedBroker;
+                b.style.background = active ? 'rgba(16,185,129,0.14)' : 'rgba(255,255,255,0.03)';
+                b.style.border = active ? '1px solid rgba(16,185,129,0.4)' : '1px solid var(--border)';
+                b.style.color = active ? 'var(--green)' : 'var(--text)';
+              });
+            }
           });
-        }
+        });
         const pairSelect = document.getElementById("pair-select");
         if (pairSelect && AVAILABLE_PAIRS.includes(status.asset)) pairSelect.value = status.asset;
         pairSelect.disabled = !!status.running;
