@@ -1,546 +1,620 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Maximus Bot - Painel</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0a0f1f;
-      --card: #0e1526;
-      --border: #1f2937;
-      --text: #f8fafc;
-      --muted: #a1aab5;
-      --primary: #3b82f6;
-      --green: #10b981;
-      --red: #f43f5e;
-      --warn: #f59e0b;
-      --green2: #17c964;
-      --red2: #f31260;
-      --radius: 1rem;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: radial-gradient(1200px 600px at 80% -10%, #12224a 0%, var(--bg) 45%);
-      color: var(--text);
-      font-family: 'Inter', -apple-system, sans-serif;
-      min-height: 100vh;
-      padding: 20px;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-    }
-    .container { width: 100%; max-width: 1200px; }
-    .card {
-      background: rgba(14, 21, 38, 0.9);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-    }
-    .input-field {
-      width: 100%; padding: 12px; margin-top: 6px; margin-bottom: 16px;
-      background: rgba(10,15,31,0.8); border: 1px solid var(--border);
-      border-radius: 12px; color: var(--text); outline: none; font-size: 14px; font-family: inherit;
-    }
-    .input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
-    .btn { width: 100%; padding: 13px; font-weight: 700; font-size: 14px; border-radius: 12px; border: none; cursor: pointer; text-align: center; font-family: inherit; }
-    .btn-green { background: linear-gradient(180deg, #2ee6a0, #0ea271); color: #04110b; }
-    .btn-green:hover { filter: brightness(1.08); }
-    .btn-blue { background: var(--primary); color: #fff; }
-    .btn-blue:hover { filter: brightness(1.08); }
-    .btn-red { background: linear-gradient(180deg, #f8577e, #e11d48); color: #fff; }
-    .btn-red:hover { filter: brightness(1.08); }
-    .text-sm { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 4px; font-weight: 600; }
-    .text-lg { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
-    .text-green { color: var(--green); }
-    .text-red { color: var(--red); }
-    .hidden { display: none !important; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maximus Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0E14;
+    --surface: #121821;
+    --surface-2: #161D28;
+    --border: #212B38;
+    --text: #EDEFF5;
+    --text-dim: #8993A6;
+    --text-faint: #5B6577;
+    --gold: #C9A24B;
+    --gold-dim: rgba(201, 162, 75, 0.14);
+    --success: #35C488;
+    --success-dim: rgba(53, 196, 136, 0.13);
+    --danger: #EF5350;
+    --danger-dim: rgba(239, 83, 80, 0.13);
+  }
 
-    /* Cards de estatística - estilo BotCloud */
-    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
-    .stat-box { border-radius: 16px; padding: 18px 16px; border: 1px solid var(--border); }
-    .stat-box.green { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); }
-    .stat-box.red   { background: rgba(244,63,94,0.12);  border-color: rgba(244,63,94,0.35); }
-    .stat-box.blue  { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.35); }
-    .stat-box.neutral { background: rgba(255,255,255,0.02); border-color: var(--border); }
-    .stat-value { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  * { box-sizing: border-box; }
 
-    /* Gráfico de desempenho */
-    .chart-wrap { width: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(201,162,75,0.07), transparent 60%);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 32px 20px;
+  }
 
-    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
-    .btn-ghost { padding: 7px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-family: inherit; }
-    .btn-ghost:hover { background: rgba(20,28,46,0.8); color: var(--text); }
-    select.input-field { cursor: pointer; }
-    select.input-field:disabled { opacity: 0.5; cursor: not-allowed; }
-    .error-box { padding: 12px; margin-bottom: 16px; border-radius: 12px; font-size: 12px; background: rgba(244,63,94,0.12); color: var(--red); border: 1px solid rgba(244,63,94,0.3); }
-    .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); display: inline-block; }
-    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--muted); }
-  </style>
+  .wrap { max-width: 1150px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { flex-shrink: 0; }
+  .brand h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; letter-spacing: -0.01em; margin: 0; }
+
+  .conn-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint); }
+  .conn-dot.live { background: var(--success); box-shadow: 0 0 0 3px var(--success-dim); }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+  }
+  .btn-ghost:hover { border-color: var(--text-faint); color: var(--text); }
+
+  .layout { display: flex; gap: 20px; align-items: flex-start; }
+  .content { flex: 1; min-width: 0; }
+
+  /* ---------- Sidebar corretoras ---------- */
+  .sidebar {
+    width: 220px;
+    flex: 0 0 220px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    position: sticky;
+    top: 20px;
+  }
+  .sidebar-title { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; margin: 0 0 12px 0; }
+  .broker-item {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 10px 12px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .broker-item:hover { border-color: var(--text-faint); color: var(--text); }
+  .broker-item.active { border-color: var(--success); color: var(--success); background: var(--success-dim); }
+  .broker-item.connected { border-color: var(--success); color: var(--success); background: var(--success-dim); cursor: default; }
+  .broker-item .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .9; }
+  .broker-form { margin-top: 4px; }
+  .broker-form label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 5px; }
+  .broker-form input {
+    width: 100%; padding: 9px 11px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: inherit; font-size: 13px; outline: none; margin-bottom: 10px;
+  }
+  .broker-form input:focus { border-color: var(--gold); }
+  .broker-error { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(239,83,80,0.25); border-radius: 8px; padding: 8px 10px; font-size: 11px; margin-bottom: 10px; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    background: linear-gradient(180deg, var(--surface), var(--surface-2));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px 28px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute; inset: 0; border-radius: 16px; padding: 1px;
+    background: linear-gradient(120deg, transparent 40%, rgba(201,162,75,0.35), transparent 60%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    pointer-events: none; opacity: 0; transition: opacity .3s;
+  }
+  .hero.running::before { opacity: 1; }
+
+  .ring {
+    width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2); border: 2px solid var(--border); position: relative;
+  }
+  .ring.running { border-color: var(--success); box-shadow: 0 0 0 0 var(--success-dim); animation: pulse-ring 2s ease-out infinite; }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 var(--success-dim); }
+    70% { box-shadow: 0 0 0 12px rgba(53,196,136,0); }
+    100% { box-shadow: 0 0 0 0 rgba(53,196,136,0); }
+  }
+  .toggle-btn {
+    width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--success); color: #0A0E14; transition: background .15s, transform .1s;
+  }
+  .toggle-btn:active { transform: scale(0.94); }
+  .toggle-btn.running { background: var(--danger); }
+  .toggle-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .hero-info { flex: 1; min-width: 0; }
+  .hero-status { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; margin: 0 0 4px 0; }
+  .hero-status.running { color: var(--success); }
+  .hero-sub { font-size: 13px; color: var(--text-dim); margin: 0 0 14px 0; }
+  .hero-sub b { color: var(--text); font-weight: 500; }
+
+  .error-box { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(239,83,80,0.25); border-radius: 8px; padding: 10px 12px; font-size: 12px; margin: 0; }
+
+  .pair-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .pair-row label { font-size: 12px; color: var(--text-dim); }
+  .pair-select {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: inherit; font-size: 13px; padding: 7px 10px; outline: none; cursor: pointer;
+  }
+  .pair-select:focus { border-color: var(--gold); }
+  .pair-select:disabled { opacity: .5; cursor: not-allowed; }
+  .pair-hint { font-size: 11px; color: var(--text-faint); }
+
+  /* ---------- Metrics ---------- */
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; border-top: 2px solid var(--border); }
+  .metric.gold { border-top-color: var(--gold); }
+  .metric.pl { border-top-color: var(--border); }
+  .metric.pl.positive { border-top-color: var(--success); }
+  .metric.pl.negative { border-top-color: var(--danger); }
+  .metric-label { font-size: 12px; color: var(--text-dim); margin: 0 0 6px 0; }
+  .metric-value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; margin: 0; }
+  .metric-value.positive { color: var(--success); }
+  .metric-value.negative { color: var(--danger); }
+  .metric-sub { font-size: 12px; color: var(--text-faint); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .score-row { display: flex; align-items: baseline; gap: 8px; }
+  .score-win { color: var(--success); font-weight: 600; }
+  .score-loss { color: var(--danger); font-weight: 600; }
+  .score-sep { color: var(--text-faint); }
+
+  /* ---------- Operations table ---------- */
+  .section-label { font-size: 13px; color: var(--text-dim); margin: 0 0 10px 4px; }
+  .ops-table { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align: left; font-weight: 500; color: var(--text-faint); padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  tbody td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface-2); }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+  .badge.call { background: var(--success-dim); color: var(--success); }
+  .badge.put { background: var(--danger-dim); color: var(--danger); }
+  .badge.win { background: var(--success-dim); color: var(--success); }
+  .badge.loss { background: var(--danger-dim); color: var(--danger); }
+  .badge.draw { background: var(--gold-dim); color: var(--gold); }
+  .badge.empate { background: var(--gold-dim); color: var(--gold); }
+  .profit-cell.positive { color: var(--success); }
+  .profit-cell.negative { color: var(--danger); }
+  .empty-state { padding: 40px 20px; text-align: center; color: var(--text-faint); font-size: 13px; }
+
+  /* ---------- Login ---------- */
+  .login-wrap { max-width: 360px; margin: 12vh auto 0; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px 28px; }
+  .login-card h1 { font-family: 'Fraunces', serif; text-align: center; font-size: 24px; margin: 0 0 4px 0; }
+  .login-sub { text-align: center; font-size: 13px; color: var(--text-dim); margin: 0 0 24px 0; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .field input { width: 100%; padding: 11px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px; outline: none; transition: border-color .15s; }
+  .field input:focus { border-color: var(--gold); }
+  .submit-btn { width: 100%; padding: 12px; background: var(--gold); color: #14100A; border: none; border-radius: 8px; font-family: inherit; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 4px; }
+  .submit-btn:hover { background: #D8B15E; }
+  .forgot-btn { width: 100%; padding: 10px; background: transparent; color: var(--text-dim); border: none; border-radius: 8px; font-family: inherit; font-size: 12px; cursor: pointer; margin-top: 6px; }
+  .forgot-btn:hover { color: var(--text); }
+
+  .login-error { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(239,83,80,0.25); border-radius: 8px; padding: 10px 12px; font-size: 12px; margin-bottom: 16px; }
+  .hidden { display: none !important; }
+
+  @media (max-width: 820px) {
+    .layout { flex-direction: column; }
+    .sidebar { width: 100%; flex: none; position: static; }
+  }
+  @media (max-width: 560px) {
+    .metrics { grid-template-columns: 1fr; }
+    .hero { flex-direction: column; align-items: flex-start; }
+  }
+</style>
 </head>
 <body>
-  <div id="app" class="container">
-    <div class="card" style="text-align: center; color: var(--muted);">Carregando painel...</div>
-  </div>
 
-  <script>
-    const API_BASE = "/api";
-    let refreshInterval = null;
-    let balanceHistory = [];
-    let selectedBroker = null;
+<div id="app" class="wrap"></div>
 
-    function getToken() { return localStorage.getItem("token"); }
-    function setToken(t) { localStorage.setItem("token", t); }
-    function removeToken() {
-      localStorage.removeItem("token");
-      if (refreshInterval) clearInterval(refreshInterval);
-    }
+<script>
+  const API_BASE = "/api";
+  let refreshInterval = null;
+  let selectedBroker = null;
+  const AVAILABLE_PAIRS = ["EURUSD-OTC", "GBPUSD-OTC", "EURGBP-OTC", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD"];
+  const AVAILABLE_BROKERS = ["IQ Option", "Quotex", "Binomo", "Pocket Option", "Expert Option"];
 
-    async function apiFetch(path, options = {}) {
-      const { token, method = "GET", body } = options;
-      let res = await fetch(`${API_BASE}${path}`, {
-        method, cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || data.message || `Erro ${res.status}`);
-      return data;
-    }
+  function getToken() { return localStorage.getItem("token"); }
+  function setToken(t) { localStorage.setItem("token", t); }
+  function removeToken() { localStorage.removeItem("token"); if (refreshInterval) clearInterval(refreshInterval); }
 
-    const AVAILABLE_PAIRS = ["EURUSD-OTC", "GBPUSD-OTC", "EURGBP-OTC", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD"];
-    const AVAILABLE_BROKERS = ["IQ Option", "Quotex", "Binomo", "Pocket Option", "Expert Option"];
-
-    function money(v) {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
-    }
-
-    async function handleLogin(e) {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const errorDiv = document.getElementById("login-error");
-      errorDiv.classList.add("hidden");
-      try {
-        const res = await apiFetch("/auth/login", { method: "POST", body: { email, password } });
-        const token = res.token || res.access_token;
-        if (!token) throw new Error("Token não retornado pelo servidor");
-        setToken(token);
-        initDashboard();
-      } catch (err) {
-        errorDiv.textContent = err.message || "Credenciais inválidas";
-        errorDiv.classList.remove("hidden");
-      }
-    }
-
-    function handleLogout() { removeToken(); renderLoginScreen(); }
-
-    function renderLoginScreen() {
-      if (refreshInterval) clearInterval(refreshInterval);
-      document.getElementById("app").innerHTML = `
-        <div class="card" style="max-width: 380px; margin: 40px auto 0;">
-          <div style="text-align:center; margin-bottom: 20px;">
-            <span class="logo-dot" style="width:14px; height:14px; margin-bottom: 10px;"></span>
-            <h2 style="margin: 0; font-size: 22px; font-weight: 900; letter-spacing: .02em;">MAXIMUS BOT</h2>
-            <p style="font-size: 12px; color: var(--muted); margin: 6px 0 0;">Faça login para acessar o painel</p>
-          </div>
-          <div id="login-error" class="error-box hidden"></div>
-          <form id="login-form">
-            <div>
-              <label class="text-sm">E-mail</label>
-              <input type="email" id="email" required class="input-field" placeholder="seu@email.com" />
-            </div>
-            <div>
-              <label class="text-sm">Senha</label>
-              <input type="password" id="password" required class="input-field" placeholder="********" />
-            </div>
-            <button type="submit" class="btn btn-green">Entrar</button>
-            <button type="button" id="forgot-btn" class="btn" style="margin-top:10px; background:transparent; color:var(--primary); box-shadow:none;">Esqueceu a senha?</button>
-          </form>
-        </div>
-      `;
-      document.getElementById("login-form").addEventListener("submit", handleLogin);
-      document.getElementById("forgot-btn").addEventListener("click", handleForgotPassword);
-    }
-
-    function handleForgotPassword() {
-      alert("Entre em contato com o suporte para recuperar sua senha.");
-    }
-
-    function renderHomeScreen() {
-      if (refreshInterval) clearInterval(refreshInterval);
-      const broker = localStorage.getItem("broker") || "Não configurada";
-      document.getElementById("app").innerHTML = `
-        <div class="card" style="max-width: 420px; margin: 40px auto 0; text-align: center;">
-          <span class="logo-dot" style="width:16px; height:16px; margin-bottom: 12px;"></span>
-          <h2 style="margin: 0; font-size: 24px; font-weight: 900;">MAXIMUS BOT</h2>
-          <p style="font-size: 12px; color: var(--muted); margin: 6px 0 24px;">Bem-vindo ao painel de operação</p>
-
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 22px;">
-            <span class="text-sm" style="margin-bottom:8px;">Corretora conectada</span>
-            <div style="font-weight: 700; color: var(--green); font-size: 15px;">${broker}</div>
-          </div>
-
-          <button id="btn-enter" class="btn btn-green" style="padding: 16px; font-size: 16px;">ENTRAR NO BOT</button>
-        </div>
-      `;
-      document.getElementById("btn-enter").addEventListener("click", initDashboard);
-    }
-
-    function renderBrokerSection(brokerStatus) {
-      const broker = brokerStatus || {};
-      const current = broker.broker || null;
-      const connected = broker.logged && broker.broker && broker.email;
-      const items = AVAILABLE_BROKERS.map(b => {
-        const active = b === current;
-        return `
-          <button type="button" data-broker="${b}"
-            style="width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; margin-bottom:8px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600;
-              ${active
-                ? 'background:rgba(16,185,129,0.14); border:1px solid rgba(16,185,129,0.4); color:var(--green);'
-                : 'background:rgba(255,255,255,0.03); border:1px solid var(--border); color:var(--text);'}"
-            ${connected && active ? 'disabled' : ''}>
-            <span>${b}</span>
-            ${active
-              ? (connected ? '<span style="font-size:10px; color:var(--green);">● conectada</span>' : '<span style="font-size:10px; color:var(--warn);">selecionada</span>')
-              : '<span style="opacity:0.35;">+</span>'}
-          </button>
-        `;
-      }).join("");
-
-      return `
-        <aside id="broker-sidebar" style="width:100%;">
-          <div style="font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:12px;">Corretora para operar</div>
-          <div id="broker-list">${items}</div>
-
-          <form id="broker-form" style="text-align:left; margin-top:4px; ${connected && current ? 'display:none;' : ''}">
-            <div>
-              <label class="text-sm" style="margin-bottom:6px;">E-mail / Usuário</label>
-              <input type="text" id="broker-email" class="input-field" placeholder="seu@email.com" value="${current ? (broker.email || '') : ''}" />
-            </div>
-            <div>
-              <label class="text-sm" style="margin-bottom:6px;">Senha</label>
-              <input type="password" id="broker-password" class="input-field" placeholder="senha da corretora" />
-            </div>
-            <div id="broker-error" class="error-box hidden"></div>
-            <button type="submit" class="btn btn-blue" style="margin-top:4px;">${connected && current ? 'TORCAR' : 'LOGAR NESTA CORRETORA'}</button>
-          </form>
-        </aside>
-      `;
-    }
-
-    async function handleBrokerLogin(e) {
-      e.preventDefault();
-      const broker = selectedBroker;
-      const email = document.getElementById("broker-email").value.trim();
-      const password = document.getElementById("broker-password").value;
-      const errEl = document.getElementById("broker-error");
-      errEl.classList.add("hidden");
-      if (!broker) {
-        errEl.textContent = "Selecione uma corretora na lateral.";
-        errEl.classList.remove("hidden");
-        return;
-      }
-      try {
-        const res = await apiFetch("/broker", { method: "POST", body: { broker, email, password } });
-        if (res && res.success === false) throw new Error(res.error);
-        localStorage.setItem("broker", res.broker || broker);
-        const formEl = document.getElementById("broker-form");
-        if (formEl) formEl.style.display = "none";
-        const pwEl = document.getElementById("broker-password");
-        if (pwEl) pwEl.value = "";
-        await loadDashboardData();
-      } catch (err) {
-        errEl.textContent = err.message || "Erro ao configurar a corretora";
-        errEl.classList.remove("hidden");
-      }
-    }
-
-    async function loadDashboardData() {
-      const token = getToken();
-      if (!token) { renderLoginScreen(); return; }
-      try {
-        const res = await apiFetch("/status", { token });
-        const status = {
-          running: res.running === true || res.status === 'LIGADO' || res.running === 'true',
-          initial_balance: res.initial_balance ?? 1000,
-          current_balance: res.current_balance ?? res.saldo ?? 1000,
-          wins: res.wins ?? 0,
-          losses: res.losses ?? 0,
-          asset: (res.asset || res.asset_pair || 'EURUSD').toUpperCase(),
-          lastEngineError: res.lastEngineError ?? null,
-          lastErrorAt: res.lastErrorAt ?? null,
-          events: Array.isArray(res.events) ? res.events : [],
-          broker: res.broker || null
-        };
-        buildBalanceHistory(status);
-        updateDashboardUI(status);
-      } catch (err) {
-        console.error("Erro ao buscar status:", err);
-        if (err.message.includes("401") || err.message.includes("403") || err.message.includes("jwt") || err.message.includes("Unauthorized")) {
-          removeToken(); renderLoginScreen();
-        }
-      }
-    }
-
-    function buildBalanceHistory(status) {
-      // Reconstrói a série de saldo a partir dos eventos win/loss ("Saldo R$ X")
-      const points = [Number(status.initial_balance) || 1000];
-      (status.events || []).forEach(ev => {
-        if (ev.kind !== 'win' && ev.kind !== 'loss') return;
-        const m = (ev.message || '').match(/Saldo R\$\s*([\d.,]+)/i);
-        if (m) points.push(parseFloat(m[1].replace(/\./g, '').replace(',', '.')));
-      });
-      if (points.length > 1) balanceHistory = points;
-    }
-
-    async function toggleBot() {
-      const token = getToken();
-      const btn = document.getElementById("btn-toggle");
-      if (btn) { btn.textContent = "Aguarde..."; btn.disabled = true; }
-      try {
-        const statusData = await apiFetch("/status", { token });
-        const isRunning = statusData.running === true || statusData.status === 'LIGADO' || statusData.running === 'true';
-        const path = isRunning ? "/stop" : "/start";
-        const select = document.getElementById("pair-select");
-        const selectedPair = select ? select.value : undefined;
-        await apiFetch(path, {
-          method: "POST", token,
-          body: path === "/start" && selectedPair ? { asset: selectedPair } : undefined
-        });
-        await loadDashboardData();
-      } catch (err) {
-        alert("Erro ao alterar o bot: " + err.message);
-        await loadDashboardData();
-      }
-    }
-
-    function renderChart() {
-      const wrap = document.getElementById("chart-wrap");
-      if (!wrap) return;
-      const data = balanceHistory.length ? balanceHistory : [1000];
-      const w = 760, h = 150, pad = 8;
-      let min = Math.min(...data), max = Math.max(...data);
-      if (min === max) { min -= 1; max += 1; }
-      const range = max - min;
-      const px = (i) => pad + (i / (data.length - 1)) * (w - pad * 2);
-      const py = (v) => h - pad - ((v - min) / range) * (h - pad * 2);
-      const line = data.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(" ");
-      const area = `M${pad},${h - pad} L${line.replace(/ /g, ' L')} L${w - pad},${h - pad} Z`;
-      const up = data[data.length - 1] >= data[0];
-      const col = up ? "#10b981" : "#f43f5e";
-      const last = data[data.length - 1];
-      wrap.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <h2 style="margin:0; font-size:15px; font-weight:700;">Desempenho</h2>
-          <div style="font-size:13px; color:${col}; font-weight:700; font-variant-numeric:tabular-nums;">${money(last)}</div>
-        </div>
-        <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:auto; display:block;">
-          <defs>
-            <linearGradient id="gfill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="${col}" stop-opacity="0.25"/>
-              <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <path d="${area}" fill="url(#gfill)"/>
-          <polyline points="${line}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="${px(data.length-1).toFixed(1)}" cy="${py(last).toFixed(1)}" r="4" fill="${col}"/>
-        </svg>
-      `;
-    }
-
-    function updateDashboardUI(status) {
-      const profit = (status.current_balance - status.initial_balance).toFixed(2);
-      const profitClass = profit >= 0 ? "text-green" : "text-red";
-      const statusColor = status.running ? "text-green" : "text-sm";
-      const btnClass = status.running ? "btn-red" : "btn-green";
-      const btnText = status.running ? "PARAR BOT" : "INICIAR BOT";
-      const totalOps = status.wins + status.losses;
-      const accuracy = totalOps > 0 ? Math.round((status.wins / totalOps) * 100) : 0;
-
-      if (!document.getElementById("btn-toggle")) {
-        if (!selectedBroker) {
-          selectedBroker = (status.broker && status.broker.broker) || AVAILABLE_BROKERS[0];
-        }
-        document.getElementById("app").innerHTML = `
-          <header>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <span class="logo-dot"></span>
-              <h1 style="margin:0; font-size:17px; font-weight:900;">MAXIMUS BOT</h1>
-              <span id="bot-status-text" class="pill" style="margin-left:4px;">● Parado</span>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button id="logout-btn" class="btn-ghost">Sair</button>
-            </div>
-          </header>
-
-          <div style="display:flex; gap:14px; align-items:flex-start;">
-            <aside style="width:210px; flex:0 0 210px; position:sticky; top:12px; max-height:calc(100vh - 24px); overflow:auto;">
-              ${renderBrokerSection(status.broker)}
-            </aside>
-
-            <main style="flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:stretch;">
-          <div style="display:flex; flex-direction:column; gap:14px; min-width:0;">
-          <div class="grid-stats" style="grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-bottom:0;">
-            <div class="stat-box neutral">
-              <span class="text-sm">Saldo Atual</span>
-              <div id="val-balance" class="stat-value">${money(status.current_balance)}</div>
-            </div>
-            <div class="stat-box ${profit >= 0 ? 'green' : 'red'}">
-              <span class="text-sm">Lucro</span>
-              <div id="val-profit" class="stat-value ${profitClass}">${profit >= 0 ? '+' : ''}${money(profit)}</div>
-            </div>
-            <div class="stat-box green">
-              <span class="text-sm">Vitórias</span>
-              <div id="val-wins" class="stat-value">${status.wins}</div>
-            </div>
-            <div class="stat-box red">
-              <span class="text-sm">Derrotas</span>
-              <div id="val-losses" class="stat-value">${status.losses}</div>
-            </div>
-            <div class="stat-box blue">
-              <span class="text-sm">Precisão</span>
-              <div id="val-accuracy" class="stat-value">${accuracy}%</div>
-            </div>
-          </div>
-
-          <div class="card" style="text-align:center; flex:1; display:flex; flex-direction:column; justify-content:center;">
-            <div id="engine-error" class="error-box hidden"></div>
-            <label class="text-sm" style="margin-bottom:6px;">Par de operação</label>
-            <select id="pair-select" class="input-field" style="max-width: 200px; margin: 0 auto;">
-              ${AVAILABLE_PAIRS.map(p => `<option value="${p}" ${status.asset === p ? 'selected' : ''}>${p}</option>`).join("")}
-            </select>
-            <button id="btn-toggle" class="btn ${btnClass}" style="max-width: 200px; margin: 10px auto 0; padding: 13px 22px; border-radius: 9999px;">${btnText}</button>
-          </div>
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:14px; min-width:0;">
-          <div class="card">
-            <div id="chart-wrap" class="chart-wrap"></div>
-          </div>
-
-          <div class="card" style="flex:1; min-height:0;">
-            <h2 style="font-size: 15px; font-weight: 700; margin-top: 0; margin-bottom: 10px;">Histórico da Operação</h2>
-            <div id="op-log" style="max-height: 180px; overflow-y: auto; text-align: left; font-size: 12px;">
-              <div style="color: var(--muted); padding: 8px 0;">Sem eventos ainda.</div>
-            </div>
-          </div>
-          </div>
-            </main>
-          </div>
-        `;
-        document.getElementById("logout-btn").addEventListener("click", handleLogout);
-        document.getElementById("btn-toggle").addEventListener("click", toggleBot);
-        const brokerForm = document.getElementById("broker-form");
-        if (brokerForm) brokerForm.addEventListener("submit", handleBrokerLogin);
-        document.querySelectorAll("#broker-list [data-broker]").forEach(btn => {
-          if (btn.disabled) return;
-          btn.addEventListener("click", () => {
-            selectedBroker = btn.getAttribute("data-broker");
-            const f = document.getElementById("broker-form");
-            if (f) f.style.display = "";
-            const list = document.getElementById("broker-list");
-            if (list) {
-              list.querySelectorAll("[data-broker]").forEach(b => {
-                const active = b.getAttribute("data-broker") === selectedBroker;
-                b.style.background = active ? 'rgba(16,185,129,0.14)' : 'rgba(255,255,255,0.03)';
-                b.style.border = active ? '1px solid rgba(16,185,129,0.4)' : '1px solid var(--border)';
-                b.style.color = active ? 'var(--green)' : 'var(--text)';
-              });
-            }
-          });
-        });
-        const pairSelect = document.getElementById("pair-select");
-        if (pairSelect && AVAILABLE_PAIRS.includes(status.asset)) pairSelect.value = status.asset;
-        pairSelect.disabled = !!status.running;
-      }
-
-      document.getElementById("val-balance").textContent = money(status.current_balance);
-      const profitEl = document.getElementById("val-profit");
-      profitEl.textContent = `${profit >= 0 ? '+' : ''}${money(profit)}`;
-      profitEl.className = `stat-value ${profitClass}`;
-      document.getElementById("val-wins").textContent = status.wins;
-      document.getElementById("val-losses").textContent = status.losses;
-      document.getElementById("val-accuracy").textContent = `${accuracy}%`;
-
-      const statusTextEl = document.getElementById("bot-status-text");
-      statusTextEl.textContent = `● ${status.running ? "Operando" : "Parado"}`;
-      statusTextEl.className = status.running ? "text-green" : "text-sm";
-      if (!status.running) statusTextEl.style.color = "var(--muted)";
-
-      const btnToggle = document.getElementById("btn-toggle");
-      btnToggle.className = `btn ${btnClass}`;
-      btnToggle.textContent = btnText;
-      btnToggle.disabled = false;
-
-      const pairSelect = document.getElementById("pair-select");
-      if (pairSelect) pairSelect.disabled = !!status.running;
-
-      const errEl = document.getElementById("engine-error");
-      if (errEl) {
-        if (status.lastEngineError) {
-          const when = status.lastErrorAt ? ` (${new Date(status.lastErrorAt).toLocaleTimeString('pt-BR')})` : '';
-          errEl.textContent = "Motor de sinais com problema: " + status.lastEngineError + when;
-          errEl.classList.remove("hidden");
-        } else {
-          errEl.classList.add("hidden");
-        }
-      }
-
-      renderChart();
-      renderEventLog(status.events || []);
-    }
-
-    function renderEventLog(events) {
-      const logEl = document.getElementById("op-log");
-      if (!logEl) return;
-      if (!events.length) {
-        logEl.innerHTML = `<div style="color: var(--muted); padding: 8px 0;">Sem eventos ainda.</div>`;
-        return;
-      }
-      const colors = { win: "#10b981", loss: "#f43f5e", info: "#a1aab5", error: "#f43f5e" };
-      const labels = { win: "WIN", loss: "LOSS", info: "INFO", error: "ERRO" };
-      logEl.innerHTML = events.slice().reverse().map(ev => {
-        const color = colors[ev.kind] || "#a1aab5";
-        const tag = labels[ev.kind] || ev.kind;
-        const msg = ev.message || '';
-        // extrai o par (a 2ª palavra da mensagem, ex: "WIN call EURUSD-OTC | ..." / "Bot iniciado no par EURUSD-OTC")
-        const m = msg.match(/(?:call|put)\s+([A-Z0-9-]+)/i) || msg.match(/par\s+([A-Z0-9-]+)/i) || msg.match(/\b([A-Z0-9]{5,}-OTC)\b/i) || msg.match(/\b([A-Z]{3,6}\d*)\b/i);
-        const pair = m ? m[1] : '—';
-        const d = ev.time ? new Date(ev.time) : null;
-        const time = d ? `${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : '';
-        return `
-          <div style="background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:10px; padding:10px 12px; margin-bottom:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="display:inline-flex; align-items:center; gap:6px; color:${color}; font-weight:800; font-size:12px; letter-spacing:.02em;">
-                <span style="width:7px; height:7px; border-radius:50%; background:${color}; display:inline-block;"></span>
-                ${tag}
-              </span>
-              <span style="color:#4e5d78; font-size:11px; font-variant-numeric:tabular-nums;">${time}</span>
-            </div>
-            <div style="color:#c6d0e0; font-size:13px; font-weight:700; letter-spacing:.03em;">${pair}</div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function initDashboard() {
-      loadDashboardData();
-      if (refreshInterval) clearInterval(refreshInterval);
-      refreshInterval = setInterval(loadDashboardData, 5000);
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      if (getToken()) initDashboard();
-      else renderLoginScreen();
+  async function apiFetch(path, options = {}) {
+    const { token, method = "GET", body } = options;
+    const res = await fetch(`${API_BASE}${path}`, {
+      method, cache: "no-store",
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-cache", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
     });
-  </script>
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.message || `Erro ${res.status}`);
+    return data;
+  }
+
+  function fmtMoney(v) { const n = Number(v) || 0; const sign = n > 0 ? "+" : n < 0 ? "-" : ""; return `${sign}R$ ${Math.abs(n).toFixed(2)}`; }
+  function fmtTime(iso) { try { return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); } catch { return "--:--"; } }
+
+  const logoSvg = `<svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+    <circle cx="17" cy="17" r="16" stroke="#C9A24B" stroke-width="1.5"/>
+    <path d="M10 22V12l7 6 7-6v10" stroke="#C9A24B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+
+  // ---------------- Login ----------------
+  function renderLoginScreen() {
+    if (refreshInterval) clearInterval(refreshInterval);
+    document.getElementById("app").innerHTML = `
+      <div class="login-wrap">
+        <div class="login-card">
+          <h1>Maximus Bot</h1>
+          <p class="login-sub">Entre para acessar o painel</p>
+          <div id="login-error" class="login-error hidden"></div>
+          <form id="login-form">
+            <div class="field"><label>E-mail</label><input type="email" id="email" required placeholder="seu@email.com" /></div>
+            <div class="field"><label>Senha</label><input type="password" id="password" required placeholder="********" /></div>
+            <button type="submit" class="submit-btn">Entrar</button>
+            <button type="button" id="forgot-btn" class="forgot-btn">Esqueceu a senha?</button>
+          </form>
+        </div>
+      </div>
+    `;
+    document.getElementById("login-form").addEventListener("submit", handleLogin);
+    document.getElementById("forgot-btn").addEventListener("click", () => alert("Entre em contato com o suporte para recuperar sua senha."));
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const errorDiv = document.getElementById("login-error");
+    errorDiv.classList.add("hidden");
+    try {
+      const res = await apiFetch("/auth/login", { method: "POST", body: { email, password } });
+      const token = res.token || res.access_token;
+      if (!token) throw new Error("Token não retornado pelo servidor");
+      setToken(token);
+      initDashboard();
+    } catch (err) { errorDiv.textContent = err.message || "Credenciais inválidas"; errorDiv.classList.remove("hidden"); }
+  }
+
+  function handleLogout() { removeToken(); renderLoginScreen(); }
+
+  // ---------------- Sidebar corretoras ----------------
+  function renderSidebar(status) {
+    const broker = status.broker || {};
+    const connected = broker.logged && broker.broker && broker.email;
+    const current = broker.broker || null;
+    if (!selectedBroker) selectedBroker = current || AVAILABLE_BROKERS[0];
+
+    const items = AVAILABLE_BROKERS.map(b => {
+      const isCurrent = b === current;
+      const isSelected = b === selectedBroker;
+      let cls = 'broker-item';
+      if (isSelected && !isCurrent) cls += ' active';
+      if (isCurrent) cls += (connected ? ' connected' : ' active');
+      const dot = (connected && isCurrent) ? 'connected' : (isSelected ? 'active' : '');
+      return `<button type="button" class="${cls}" data-broker="${b}" ${(connected && isCurrent) ? 'disabled' : ''}>
+        <span>${b}</span>
+        <span class="dot"></span>
+      </button>`;
+    }).join("");
+
+    return `
+      <div class="sidebar">
+        <p class="sidebar-title">Corretora para operar</p>
+        <div id="broker-list">${items}</div>
+        <form id="broker-form" class="broker-form" style="${connected && current ? 'display:none' : ''}">
+          <label>E-mail / Usuário</label>
+          <input type="text" id="broker-email" placeholder="seu@email.com" value="${connected ? (broker.email || '') : ''}" />
+          <label>Senha</label>
+          <input type="password" id="broker-password" placeholder="senha da corretora" />
+          <div id="broker-error" class="broker-error hidden"></div>
+          <button type="submit" class="submit-btn" style="font-size:13px;">LOGAR NESTA CORRETORA</button>
+        </form>
+      </div>
+    `;
+  }
+
+  async function handleBrokerLogin(e) {
+    e.preventDefault();
+    const errEl = document.getElementById("broker-error");
+    errEl.classList.add("hidden");
+    if (!selectedBroker) { errEl.textContent = "Selecione uma corretora na lateral."; errEl.classList.remove("hidden"); return; }
+    const email = document.getElementById("broker-email").value.trim();
+    const password = document.getElementById("broker-password").value;
+    try {
+      const res = await apiFetch("/broker", { method: "POST", body: { broker: selectedBroker, email, password } });
+      if (res && res.success === false) throw new Error(res.error);
+      localStorage.setItem("broker", res.broker || selectedBroker);
+      const f = document.getElementById("broker-form");
+      if (f) f.style.display = "none";
+      await loadDashboardData();
+    } catch (err) { errEl.textContent = err.message || "Erro ao configurar a corretora"; errEl.classList.remove("hidden"); }
+  }
+
+  // ---------------- Shell ----------------
+  function renderShell(status) {
+    document.getElementById("app").innerHTML = `
+      <header>
+        <div class="brand">
+          ${logoSvg}
+          <div>
+            <h1>Maximus Bot</h1>
+            <div class="conn-pill"><span id="conn-dot" class="conn-dot"></span><span id="conn-text">conectando...</span></div>
+          </div>
+        </div>
+        <button id="logout-btn" class="btn-ghost">Sair</button>
+      </header>
+
+      <div class="layout">
+        ${renderSidebar(status)}
+
+        <div class="content">
+          <div id="hero" class="hero">
+            <div id="ring" class="ring">
+              <button id="btn-toggle" class="toggle-btn" disabled></button>
+            </div>
+            <div class="hero-info">
+              <p id="hero-status" class="hero-status">Carregando...</p>
+              <p id="hero-sub" class="hero-sub">&nbsp;</p>
+              <div id="engine-error" class="error-box hidden"></div>
+              <div class="pair-row">
+                <label for="pair-select">Par</label>
+                <select id="pair-select" class="pair-select">
+                  ${AVAILABLE_PAIRS.map(p => `<option value="${p}" ${(status.asset || '').toUpperCase() === p ? 'selected' : ''}>${p}</option>`).join("")}
+                </select>
+                <span class="pair-hint">pares -OTC ficam abertos 24h</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric gold">
+              <p class="metric-label">Saldo atual</p>
+              <p id="val-balance" class="metric-value">R$ 0,00</p>
+              <p id="val-balance-sub" class="metric-sub">&nbsp;</p>
+            </div>
+            <div id="metric-pl" class="metric pl">
+              <p class="metric-label">Lucro / Prejuízo</p>
+              <p id="val-profit" class="metric-value">R$ 0,00</p>
+              <p class="metric-sub">desde o início</p>
+            </div>
+            <div class="metric">
+              <p class="metric-label">Placar</p>
+              <p class="metric-value score-row">
+                <span id="val-wins" class="score-win">0</span>
+                <span class="score-sep">/</span>
+                <span id="val-losses" class="score-loss">0</span>
+              </p>
+              <p id="val-winrate" class="metric-sub">0% de acerto</p>
+            </div>
+          </div>
+
+          <p class="section-label">Operações recentes</p>
+          <div class="ops-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Horário</th>
+                  <th>Ativo</th>
+                  <th>Direção</th>
+                  <th>Resultado</th>
+                  <th>Lucro</th>
+                </tr>
+              </thead>
+              <tbody id="ops-body"></tbody>
+            </table>
+            <div id="ops-empty" class="empty-state hidden">Nenhuma operação registrada ainda.</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("logout-btn").addEventListener("click", handleLogout);
+    document.getElementById("btn-toggle").addEventListener("click", toggleBot);
+    document.getElementById("broker-form").addEventListener("submit", handleBrokerLogin);
+    document.querySelectorAll("#broker-list [data-broker]").forEach(btn => {
+      if (btn.disabled) return;
+      btn.addEventListener("click", () => {
+        selectedBroker = btn.getAttribute("data-broker");
+        const f = document.getElementById("broker-form");
+        if (f) f.style.display = "";
+        document.querySelectorAll("#broker-list .broker-item").forEach(b => {
+          const active = b.getAttribute("data-broker") === selectedBroker;
+          if (!b.classList.contains('connected')) {
+            b.classList.toggle('active', active);
+          }
+        });
+      });
+    });
+  }
+
+  // ---------------- Parse de operações a partir dos eventos ----------------
+  function parseOps(status) {
+    const ops = [];
+    (status.events || []).forEach(ev => {
+      if (ev.kind !== 'win' && ev.kind !== 'loss' && ev.kind !== 'empate' && ev.kind !== 'draw') return;
+      const msg = ev.message || '';
+      const labelM = msg.match(/^(WIN|LOSS|EMPATE)\s+(call|put)\s+([A-Z0-9-]+)\s*\|\s*R\$\s*([\d,.]+)/i);
+      if (!labelM) return;
+      const profit = parseFloat(labelM[4].replace(/\./g, '').replace(',', '.'));
+      ops.push({
+        time: ev.time,
+        asset: labelM[3],
+        direction: labelM[2],
+        kind: ev.kind === 'win' ? 'win' : (ev.kind === 'loss' ? 'loss' : 'empate'),
+        profit
+      });
+    });
+    return ops;
+  }
+
+  function updateDashboardUI(status) {
+    document.getElementById("conn-dot").classList.add("live");
+    document.getElementById("conn-text").textContent = "conectado";
+
+    const running = !!status.running;
+    const profit = (Number(status.current_balance) - Number(status.initial_balance));
+
+    document.getElementById("hero").classList.toggle("running", running);
+    document.getElementById("ring").classList.toggle("running", running);
+
+    const btn = document.getElementById("btn-toggle");
+    btn.classList.toggle("running", running);
+    btn.disabled = false;
+    btn.innerHTML = running
+      ? `<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="4" y="4" width="10" height="10" rx="1.5" fill="#0A0E14"/></svg>`
+      : `<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M6 4l8 5-8 5V4z" fill="#0A0E14"/></svg>`;
+
+    const heroStatus = document.getElementById("hero-status");
+    heroStatus.textContent = running ? "Bot operando" : "Bot parado";
+    heroStatus.classList.toggle("running", running);
+    document.getElementById("hero-sub").innerHTML = running
+      ? `Analisando <b>${status.asset || "—"}</b> · a cada 5s`
+      : `Clique para iniciar a leitura em <b>${status.asset || "—"}</b>`;
+
+    const errEl = document.getElementById("engine-error");
+    if (status.lastEngineError) {
+      errEl.textContent = "Motor de sinais: " + status.lastEngineError;
+      errEl.classList.remove("hidden");
+    } else {
+      errEl.classList.add("hidden");
+    }
+
+    const pairSelect = document.getElementById("pair-select");
+    if (pairSelect) {
+      pairSelect.disabled = !!running;
+      if (!running && status.asset && AVAILABLE_PAIRS.includes(status.asset.toUpperCase())) {
+        pairSelect.value = status.asset.toUpperCase();
+      }
+    }
+
+    document.getElementById("val-balance").textContent = `R$ ${Number(status.current_balance).toFixed(2)}`;
+    document.getElementById("val-balance-sub").textContent = `inicial: R$ ${Number(status.initial_balance).toFixed(2)}`;
+
+    const profitEl = document.getElementById("val-profit");
+    profitEl.textContent = fmtMoney(profit);
+    profitEl.classList.toggle("positive", profit > 0);
+    profitEl.classList.toggle("negative", profit < 0);
+    document.getElementById("metric-pl").classList.toggle("positive", profit > 0);
+    document.getElementById("metric-pl").classList.toggle("negative", profit < 0);
+
+    document.getElementById("val-wins").textContent = status.wins ?? 0;
+    document.getElementById("val-losses").textContent = status.losses ?? 0;
+    const total = (status.wins ?? 0) + (status.losses ?? 0);
+    const rate = total > 0 ? Math.round((status.wins / total) * 100) : 0;
+    document.getElementById("val-winrate").textContent = `${rate}% de acerto`;
+
+    const ops = parseOps(status);
+    const tbody = document.getElementById("ops-body");
+    const emptyEl = document.getElementById("ops-empty");
+    if (!ops.length) {
+      tbody.innerHTML = "";
+      emptyEl.classList.remove("hidden");
+    } else {
+      emptyEl.classList.add("hidden");
+      tbody.innerHTML = ops.slice(0, 12).map(op => `
+        <tr>
+          <td>${fmtTime(op.time)}</td>
+          <td>${op.asset}</td>
+          <td><span class="badge ${op.direction === 'put' ? 'put' : 'call'}">${op.direction}</span></td>
+          <td>${op.kind === 'empate'
+            ? `<span class="badge empate">EMPATE</span>`
+            : `<span class="badge ${op.kind}">${op.kind.toUpperCase()}</span>`}</td>
+          <td class="profit-cell ${op.profit >= 0 ? 'positive' : 'negative'}">${fmtMoney(op.profit)}</td>
+        </tr>
+      `).join("");
+    }
+  }
+
+  async function loadDashboardData() {
+    const token = getToken();
+    if (!token) { renderLoginScreen(); return; }
+    try {
+      const res = await apiFetch("/status", { token });
+      const running = res.running === true || res.status === 'LIGADO' || res.running === 'true';
+      if (!document.getElementById("btn-toggle")) {
+        renderShell({
+          running,
+          asset: res.asset || res.asset_pair || 'EURUSD',
+          broker: res.broker || null
+        });
+      }
+      updateDashboardUI({
+        running,
+        initial_balance: res.initial_balance ?? 1000,
+        current_balance: res.current_balance ?? res.saldo ?? 1000,
+        wins: res.wins ?? 0,
+        losses: res.losses ?? 0,
+        asset: (res.asset || res.asset_pair || 'EURUSD').toUpperCase(),
+        lastEngineError: res.lastEngineError ?? null,
+        events: Array.isArray(res.events) ? res.events : []
+      });
+    } catch (err) {
+      console.error("Erro ao buscar status:", err);
+      const cd = document.getElementById("conn-dot"); if (cd) cd.classList.remove("live");
+      const ct = document.getElementById("conn-text"); if (ct) ct.textContent = "reconectando...";
+      if (err.message.includes("401") || err.message.includes("403") || err.message.includes("Unauthorized")) { removeToken(); renderLoginScreen(); }
+    }
+  }
+
+  async function toggleBot() {
+    const token = getToken();
+    const btn = document.getElementById("btn-toggle");
+    btn.disabled = true;
+    try {
+      const statusData = await apiFetch("/status", { token });
+      const isRunning = statusData.running === true || statusData.status === 'LIGADO' || statusData.running === 'true';
+      const path = isRunning ? "/stop" : "/start";
+      const select = document.getElementById("pair-select");
+      const selectedPair = select ? select.value : undefined;
+      await apiFetch(path, { method: "POST", token, body: path === "/start" && selectedPair ? { asset: selectedPair } : undefined });
+      await loadDashboardData();
+    } catch (err) { alert("Erro ao alterar o bot: " + err.message); }
+  }
+
+  function initDashboard() {
+    loadDashboardData();
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(loadDashboardData, 5000);
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    if (getToken()) initDashboard();
+    else renderLoginScreen();
+  });
+</script>
 </body>
 </html>
