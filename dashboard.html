@@ -71,7 +71,7 @@
       return data;
     }
 
-    const AVAILABLE_PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "EURGBP"];
+    const AVAILABLE_PAIRS = ["EURUSD-OTC", "GBPUSD-OTC", "EURGBP-OTC", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD"];
 
     async function handleLogin(e) {
       e.preventDefault();
@@ -314,8 +314,11 @@
             <div style="margin-bottom: 16px;">
               <label class="text-sm" style="margin-bottom: 6px;">Par de operação</label>
               <select id="pair-select" class="input-field" style="max-width: 250px; margin: 0 auto;">
-                ${AVAILABLE_PAIRS.map(p => `<option value="${p}">${p}</option>`).join("")}
+                ${AVAILABLE_PAIRS.map(p => `<option value="${p}" ${status.asset === p ? 'selected' : ''}>${p}</option>`).join("")}
               </select>
+              <div class="text-sm" style="margin-top: 8px; color: #7C8AA5;">
+                Pares com <b>-OTC</b> ficam abertos fora do horário tradicional (mercado estendido 24h).
+              </div>
             </div>
 
             <button id="btn-toggle" class="btn btn-green" style="max-width: 250px; padding: 14px 24px; border-radius: 9999px;">
