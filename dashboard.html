@@ -305,7 +305,8 @@
       logEl.innerHTML = events.slice().reverse().map(ev => {
         const color = colors[ev.kind] || "#7C8AA5";
         const tag = labels[ev.kind] || ev.kind;
-        const time = ev.time ? new Date(ev.time).toLocaleTimeString('pt-BR') : '';
+        const d = ev.time ? new Date(ev.time) : null;
+        const time = d ? `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString('pt-BR')}` : '';
         return `<div style="display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #141C2E; align-items: baseline;">
           <span style="color: #4E5D78; white-space: nowrap; font-size: 11px;">${time}</span>
           <span style="color: ${color}; font-weight: bold; white-space: nowrap; font-size: 11px;">${tag}</span>
