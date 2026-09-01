@@ -133,7 +133,7 @@
         const token = res.token || res.access_token;
         if (!token) throw new Error("Token não retornado pelo servidor");
         setToken(token);
-        renderHomeScreen();
+        initDashboard();
       } catch (err) {
         errorDiv.textContent = err.message || "Credenciais inválidas";
         errorDiv.classList.remove("hidden");
@@ -377,7 +377,6 @@
               <span id="bot-status-text" class="pill" style="margin-left:4px;">● Parado</span>
             </div>
             <div style="display:flex; gap:8px;">
-              <button id="home-btn" class="btn-ghost">Início</button>
               <button id="logout-btn" class="btn-ghost">Sair</button>
             </div>
           </header>
@@ -439,8 +438,6 @@
           </div>
         `;
         document.getElementById("logout-btn").addEventListener("click", handleLogout);
-        const homeBtn = document.getElementById("home-btn");
-        if (homeBtn) homeBtn.addEventListener("click", renderHomeScreen);
         document.getElementById("btn-toggle").addEventListener("click", toggleBot);
         const brokerForm = document.getElementById("broker-form");
         if (brokerForm) brokerForm.addEventListener("submit", handleBrokerLogin);
@@ -531,7 +528,7 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
-      if (getToken()) renderHomeScreen();
+      if (getToken()) initDashboard();
       else renderLoginScreen();
     });
   </script>
