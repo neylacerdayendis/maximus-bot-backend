@@ -14,6 +14,9 @@ let stopTraderFn = null;
 let lastEngineError = null;
 let lastErrorAt = null;
 
+// Par atualmente ativo (selecionado no painel)
+let currentAsset = process.env.BOT_ASSET || 'EURUSD';
+
 function readData() {
   if (!fs.existsSync(DATA_FILE)) return { botStatus: 'DESLIGADO', wins: 0, losses: 0, saldo: 1000, initial_balance: 1000 };
   const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
@@ -56,6 +59,7 @@ router.get('/status', (req, res) => {
     losses: data.losses,
     current_balance: data.saldo,
     initial_balance: data.initial_balance,
+    asset: currentAsset,
     lastEngineError,
     lastErrorAt
   });
@@ -70,9 +74,13 @@ router.post('/start', async (req, res) => {
 
   const rawData = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : {};
 
-  const asset = process.env.BOT_ASSET || 'EURUSD';
+  // Permite escolher o par pelo painel (ex.: EURUSD, GBPUSD...)
+  const selectedAsset = req.body && typeof req.body.asset === 'string' ? req.body.asset.trim().toUpperCase() : null;
+  const asset = selectedAsset || process.env.BOT_ASSET || 'EURUSD';
   const stake = Number(process.env.BOT_STAKE || 10);
   const expiration = Number(process.env.BOT_EXPIRATION || 1);
+
+  currentAsset = asset;
 
   try {
     stopTraderFn = await startTrader({

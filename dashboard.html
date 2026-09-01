@@ -25,6 +25,8 @@
     header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #20293D; margin-bottom: 24px; }
     .logout-btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; background: transparent; border: 1px solid #20293D; color: #7C8AA5; cursor: pointer; }
     .logout-btn:hover { background: #141C2E; }
+    select.input-field { cursor: pointer; }
+    select.input-field:disabled { opacity: 0.5; cursor: not-allowed; }
     .error-box { padding: 12px; margin-bottom: 16px; border-radius: 12px; font-size: 12px; background: rgba(240,69,92,0.1); color: #F0455C; border: 1px solid rgba(240,69,92,0.2); }
   </style>
 </head>
@@ -68,6 +70,8 @@
       if (!res.ok) throw new Error(data.error || data.message || `Erro ${res.status}`);
       return data;
     }
+
+    const AVAILABLE_PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD", "EURGBP"];
 
     async function handleLogin(e) {
       e.preventDefault();
@@ -135,6 +139,7 @@
           current_balance: s.current_balance ?? s.saldo ?? 1000,
           wins: s.wins ?? 0,
           losses: s.losses ?? 0,
+          asset: (s.asset || s.asset_pair || 'EURUSD').toUpperCase(),
           lastEngineError: s.lastEngineError ?? null,
           lastErrorAt: s.lastErrorAt ?? null
         };
@@ -163,7 +168,13 @@
         const isRunning = s.running === true || s.status === 'LIGADO' || s.running === 'true';
 
         const path = isRunning ? "/stop" : "/start";
-        await apiFetch(path, { method: "POST", token });
+        const select = document.getElementById("pair-select");
+        const selectedPair = select ? select.value : undefined;
+        await apiFetch(path, {
+          method: "POST",
+          token,
+          body: path === "/start" && selectedPair ? { asset: selectedPair } : undefined
+        });
         await loadDashboardData();
       } catch (err) {
         alert("Erro ao alterar o bot: " + err.message);
@@ -209,6 +220,14 @@
           <div class="card" style="text-align: center;">
             <h2 style="font-size: 14px; color: #7C8AA5; margin-top: 0; margin-bottom: 16px;">Status da Operação</h2>
             <div id="engine-error" class="error-box hidden"></div>
+
+            <div style="margin-bottom: 16px;">
+              <label class="text-sm" style="margin-bottom: 6px;">Par de operação</label>
+              <select id="pair-select" class="input-field" style="max-width: 250px; margin: 0 auto;">
+                ${AVAILABLE_PAIRS.map(p => `<option value="${p}">${p}</option>`).join("")}
+              </select>
+            </div>
+
             <button id="btn-toggle" class="btn btn-green" style="max-width: 250px; padding: 14px 24px; border-radius: 9999px;">
               INICIAR BOT
             </button>
@@ -216,6 +235,14 @@
         `;
         document.getElementById("logout-btn").addEventListener("click", handleLogout);
         document.getElementById("btn-toggle").addEventListener("click", toggleBot);
+
+        // Define o par selecionado conforme o pares ativo do servidor
+        const pairSelect = document.getElementById("pair-select");
+        if (pairSelect && AVAILABLE_PAIRS.includes(status.asset)) {
+          pairSelect.value = status.asset;
+        }
+        // Desabilita a troca de par enquanto o bot estiver operando
+        pairSelect.disabled = !!status.running;
       }
 
       // Atualiza os valores na tela sem recriar os elementos (evita piscar)
@@ -234,6 +261,12 @@
       btnToggle.className = `btn ${btnClass}`;
       btnToggle.textContent = btnText;
       btnToggle.disabled = false;
+
+      // Reabilita (ou bloqueia) a troca de par conforme o estado do bot
+      const pairSelect = document.getElementById("pair-select");
+      if (pairSelect) {
+        pairSelect.disabled = !!status.running;
+      }
 
       // Mostra (ou esconde) o aviso de falha do motor de sinais
       const errEl = document.getElementById("engine-error");
