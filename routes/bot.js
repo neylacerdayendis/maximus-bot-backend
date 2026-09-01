@@ -3,6 +3,7 @@ const router = express.Router();
 const fs = require('fs');
 const path = require('path');
 const { startTrader } = require('../src/trader');
+const { fetchBalance } = require('../src/candle-client');
 
 const DATA_FILE = path.join(__dirname, '../data/maximus.json');
 
@@ -90,10 +91,26 @@ function saveData(data) {
 })();
 
 // Rota para pegar o status atual
-router.get('/status', (req, res) => {
+router.get('/status', async (req, res) => {
   const data = readData();
   const isRunning = (data.botStatus === 'LIGADO' || data.botStatus === true);
   const broker = readBroker();
+
+  // Tenta buscar o saldo real da conta IQ Option (não bloqueia o status)
+  let iqBalance = null;
+  let iqAccount = null;
+  let iqBalanceError = null;
+  try {
+    const bal = await fetchBalance(currentAccountType);
+    if (bal && typeof bal.balance === 'number') {
+      iqBalance = bal.balance;
+      iqAccount = bal.account || currentAccountType;
+    } else {
+      iqBalanceError = bal && bal.error ? bal.error : 'sem saldo';
+    }
+  } catch (e) {
+    iqBalanceError = e && e.message ? e.message : String(e);
+  }
 
   res.json({
     running: isRunning,
@@ -106,6 +123,9 @@ router.get('/status', (req, res) => {
     accountType: currentAccountType,
     stake: currentStake,
     expiration: currentExpiration,
+    iq_balance: iqBalance,
+    iq_account: iqAccount,
+    iq_balance_error: iqBalanceError,
     broker: {
       broker: broker ? broker.broker : null,
       email: broker ? broker.email : null,

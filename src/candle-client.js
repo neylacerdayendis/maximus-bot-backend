@@ -58,4 +58,52 @@ async function fetchCandles(asset, timeframe = 60, amount = 50) {
   });
 }
 
-module.exports = { fetchCandles };
+// Consulta o saldo atual da conta no serviço Python (GET /balance)
+async function fetchBalance(accountType) {
+  return new Promise((resolve, reject) => {
+    const qs = accountType ? `?account_type=${encodeURIComponent(accountType)}` : "";
+    const url = `${CANDLE_SERVICE_URL}/balance${qs}`;
+    const parsed = new URL(url);
+    const client = parsed.protocol === "https:" ? https : http;
+    let settled = false;
+
+    function done(fn, val) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn(val);
+    }
+
+    const timer = setTimeout(() => {
+      req.destroy(new Error("Tempo esgotado aguardando o saldo (15s)."));
+    }, 15000);
+
+    const req = client.get(
+      {
+        hostname: parsed.hostname,
+        port: parsed.port || undefined,
+        path: parsed.pathname + parsed.search,
+        headers: { "Accept": "application/json" }
+      },
+      (res) => {
+        let data = "";
+        res.on("data", chunk => data += chunk);
+        res.on("end", () => {
+          const ct = (res.headers["content-type"] || "") || "";
+          if (res.statusCode >= 400 || !ct.includes("application/json")) {
+            const preview = data.trim().slice(0, 80).replace(/\s+/g, " ");
+            return done(reject, new Error(`Serviço de saldo respondeu sem JSON (${res.statusCode}): ${preview}`));
+          }
+          try { done(resolve, JSON.parse(data)); }
+          catch (e) { done(reject, new Error("JSON inválido do serviço de saldo.")); }
+        });
+      }
+    );
+
+    req.on("error", (err) => {
+      done(reject, new Error(`Falha de conexão com o serviço de saldo: ${err && err.message || err}`));
+    });
+  });
+}
+
+module.exports = { fetchCandles, fetchBalance };

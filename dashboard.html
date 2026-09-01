@@ -546,8 +546,14 @@
     const expirySelect = document.getElementById("expiry-select");
     if (expirySelect) expirySelect.disabled = !!running;
 
-    document.getElementById("val-balance").textContent = `R$ ${Number(status.current_balance).toFixed(2)}`;
-    document.getElementById("val-balance-sub").textContent = `inicial: R$ ${Number(status.initial_balance).toFixed(2)}`;
+    const iqBal = (status.iq_balance != null) ? Number(status.iq_balance) : null;
+    if (iqBal != null && !isNaN(iqBal)) {
+      document.getElementById("val-balance").textContent = `R$ ${iqBal.toFixed(2)}`;
+      document.getElementById("val-balance-sub").textContent = `conta IQ ${(status.iq_account || 'PRACTICE')} (real)`;
+    } else {
+      document.getElementById("val-balance").textContent = `R$ ${Number(status.current_balance).toFixed(2)}`;
+      document.getElementById("val-balance-sub").textContent = `inicial: R$ ${Number(status.initial_balance).toFixed(2)}`;
+    }
 
     const profitEl = document.getElementById("val-profit");
     profitEl.textContent = fmtMoney(profit);
