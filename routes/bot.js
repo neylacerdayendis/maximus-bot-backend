@@ -25,6 +25,9 @@ let currentAccountType = process.env.BOT_ACCOUNT_TYPE || 'PRACTICE';
 let currentStake = Number(process.env.BOT_STAKE || 10);
 let currentExpiration = Number(process.env.BOT_EXPIRATION || 1);
 
+// Operação atualmente aberta (para o cronômetro no painel)
+let currentOrder = null;
+
 // Buffer de eventos recentes mostrados no painel (histórico em tempo real)
 const MAX_EVENTS = 50;
 let events = [];
@@ -123,6 +126,7 @@ router.get('/status', async (req, res) => {
     accountType: currentAccountType,
     stake: currentStake,
     expiration: currentExpiration,
+    currentOrder,
     iq_balance: iqBalance,
     iq_account: iqAccount,
     iq_balance_error: iqBalanceError,
@@ -207,6 +211,20 @@ router.post('/start', async (req, res) => {
         lastErrorAt = new Date().toISOString();
         addEvent('error', 'Erro no motor de sinais: ' + lastEngineError);
         console.error('[bot.js] Erro do motor:', lastEngineError);
+      },
+      onOrderPlaced: (ord) => {
+        currentOrder = {
+          orderId: ord.orderId,
+          asset: ord.asset,
+          direction: ord.direction,
+          stake: ord.stake,
+          startedAt: ord.startedAt,
+          expiresAt: ord.expiresAt
+        };
+        addEvent('info', `Ordem aberta: ${ord.direction.toUpperCase()} ${ord.asset} valor=R$${Number(ord.stake).toFixed(2)}`);
+      },
+      onOrderClosed: (ord) => {
+        currentOrder = null;
       }
     });
 
@@ -234,6 +252,7 @@ router.post('/stop', (req, res) => {
     stopTraderFn();
     stopTraderFn = null;
   }
+  currentOrder = null;
 
   lastEngineError = null;
   lastErrorAt = null;

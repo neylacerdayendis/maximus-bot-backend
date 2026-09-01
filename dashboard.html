@@ -164,6 +164,37 @@
 
   .error-box { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(239,83,80,0.25); border-radius: 8px; padding: 10px 12px; font-size: 12px; margin: 0; }
 
+  .content { position: relative; }
+  .order-widget {
+    position: absolute; top: 0; right: 0; z-index: 5;
+    background: linear-gradient(180deg, var(--surface), var(--surface-2));
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 18px; min-width: 210px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    display: none;
+  }
+  .order-widget.active { display: block; }
+  .order-widget .ow-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-bottom: 8px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .ow-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 8px var(--gold); animation: pulse-dot 1.4s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  .order-widget .ow-asset { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; }
+  .order-widget .ow-dir { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; margin-left: 6px; }
+  .ow-dir.call { background: var(--success-dim); color: var(--success); }
+  .ow-dir.put { background: var(--danger-dim); color: var(--danger); }
+  .order-widget .ow-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+  .order-widget .ow-row b { color: var(--text); font-weight: 500; }
+  .order-widget .ow-timer {
+    margin-top: 10px; font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600; text-align: center;
+    color: var(--gold); letter-spacing: 2px;
+  }
+  .order-widget .ow-timer.warning { color: var(--danger); }
+  .order-widget .ow-progress { height: 3px; border-radius: 2px; background: var(--border); margin-top: 8px; overflow: hidden; }
+  .order-widget .ow-progress span { display: block; height: 100%; background: var(--gold); width: 0%; transition: width .3s linear; }
+
   .pair-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
   .pair-row label { font-size: 12px; color: var(--text-dim); }
   .pair-select {
@@ -382,6 +413,20 @@
         ${renderSidebar(status)}
 
         <div class="content">
+          <div id="order-widget" class="order-widget">
+            <div class="ow-header">
+              <span>Operação aberta</span>
+              <span class="ow-dot"></span>
+            </div>
+            <div>
+              <span id="ow-asset" class="ow-asset">--</span>
+              <span id="ow-dir" class="ow-dir call">CALL</span>
+            </div>
+            <div class="ow-row"><span>Valor</span><b id="ow-stake">--</b></div>
+            <div class="ow-row"><span>Expira em</span><b id="ow-countdown">--</b></div>
+            <div class="ow-timer" id="ow-timer">--:--</div>
+            <div class="ow-progress"><span id="ow-progress-bar"></span></div>
+          </div>
           <div id="hero" class="hero">
             <div id="ring" class="ring">
               <button id="btn-toggle" class="toggle-btn" disabled></button>
@@ -568,6 +613,8 @@
     const rate = total > 0 ? Math.round((status.wins / total) * 100) : 0;
     document.getElementById("val-winrate").textContent = `${rate}% de acerto`;
 
+    updateOrderWidget(status.currentOrder);
+
     const ops = parseOps(status);
     const tbody = document.getElementById("ops-body");
     const emptyEl = document.getElementById("ops-empty");
@@ -590,6 +637,52 @@
     }
   }
 
+  let orderTimerTick = null;
+
+  function updateOrderWidget(order) {
+    const w = document.getElementById("order-widget");
+    if (!w) return;
+    if (!order || !order.expiresAt || !order.startedAt) {
+      w.classList.remove("active");
+      if (orderTimerTick) { clearInterval(orderTimerTick); orderTimerTick = null; }
+      return;
+    }
+    w.classList.add("active");
+    document.getElementById("ow-asset").textContent = order.asset || "--";
+    const dirEl = document.getElementById("ow-dir");
+    dirEl.textContent = (order.direction || "call").toUpperCase();
+    dirEl.className = "ow-dir " + ((order.direction || "").toLowerCase() === "put" ? "put" : "call");
+    document.getElementById("ow-stake").textContent = `R$ ${Number(order.stake || 0).toFixed(2)}`;
+
+    const expired = new Date(order.expiresAt).getTime();
+    const started = new Date(order.startedAt).getTime();
+    const total = Math.max(expired - started, 1);
+
+    function tick() {
+      const now = Date.now();
+      const remain = expired - now;
+      const timerEl = document.getElementById("ow-timer");
+      const cdEl = document.getElementById("ow-countdown");
+      if (remain <= 0) {
+        timerEl.textContent = "00:00";
+        timerEl.classList.add("warning");
+        cdEl.textContent = "encerrando...";
+      } else {
+        timerEl.classList.remove("warning");
+        const s = Math.floor(remain / 1000);
+        const mm = String(Math.floor(s / 60)).padStart(2, "0");
+        const ss = String(s % 60).padStart(2, "0");
+        timerEl.textContent = `${mm}:${ss}`;
+        cdEl.textContent = `${mm}:${ss}`;
+      }
+      const pct = Math.max(0, Math.min(100, ((now - started) / total) * 100));
+      document.getElementById("ow-progress-bar").style.width = `${pct}%`;
+    }
+    if (orderTimerTick) clearInterval(orderTimerTick);
+    tick();
+    orderTimerTick = setInterval(tick, 1000);
+  }
+
   async function loadDashboardData() {
     const token = getToken();
     if (!token) { renderLoginScreen(); return; }
@@ -610,6 +703,7 @@
         wins: res.wins ?? 0,
         losses: res.losses ?? 0,
         asset: (res.asset || res.asset_pair || 'EURUSD').toUpperCase(),
+        currentOrder: res.currentOrder || null,
         lastEngineError: res.lastEngineError ?? null,
         events: Array.isArray(res.events) ? res.events : []
       });

@@ -2,7 +2,7 @@ const { checkSignal } = require("./signal-engine");
 const { buy, getOrderResult } = require("./broker-client");
 const { fetchBalance } = require("./candle-client");
 
-async function startTrader({ userId, asset, stake, expiration, accountType, onResult, onError, minEntryInterval }) {
+async function startTrader({ userId, asset, stake, expiration, accountType, onResult, onError, onOrderPlaced, onOrderClosed, minEntryInterval }) {
   let active = true;
   let lastEntryAt = 0;
 
@@ -38,6 +38,7 @@ async function startTrader({ userId, asset, stake, expiration, accountType, onRe
       if (onResult) {
         onResult({ asset, action: direction, win, profit, orderId, status: res.status, balance });
       }
+      if (onOrderClosed) onOrderClosed({ orderId, status: res.status });
     } catch (err) {
       if (onError) onError(new Error(`Falha ao consultar ordem ${orderId}: ${err.message}`));
     }
@@ -56,7 +57,10 @@ async function startTrader({ userId, asset, stake, expiration, accountType, onRe
       try {
         const order = await buy(asset, direction, stake, expiration, accountType);
         if (!active) return;
+        const startedAt = Date.now();
+        const expiresAt = startedAt + Number(expiration || 1) * 60 * 1000;
         console.log(`[Trader User ${userId}] Ordem aberta id=${order.order_id} (${direction} ${asset} valor=${stake})`);
+        if (onOrderPlaced) onOrderPlaced({ orderId: order.order_id, asset, direction, stake, startedAt, expiresAt });
         settleOrder(order.order_id, direction);
       } catch (err) {
         if (onError) onError(new Error(`Falha ao abrir ordem: ${err.message}`));
