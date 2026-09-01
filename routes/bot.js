@@ -28,6 +28,13 @@ let currentExpiration = Number(process.env.BOT_EXPIRATION || 1);
 // Operação atualmente aberta (para o cronômetro no painel)
 let currentOrder = null;
 
+// Limites de ganho/perda que param o bot automaticamente (null = sem limite)
+let currentTakeProfit = null;
+let currentStopLoss = null;
+
+// Saldo inicial da sessão (para calcular ganho/perda relativo)
+let sessionStartBalance = null;
+
 // Buffer de eventos recentes mostrados no painel (histórico em tempo real)
 const MAX_EVENTS = 50;
 let events = [];
@@ -126,6 +133,8 @@ router.get('/status', async (req, res) => {
     accountType: currentAccountType,
     stake: currentStake,
     expiration: currentExpiration,
+    takeProfit: currentTakeProfit,
+    stopLoss: currentStopLoss,
     currentOrder,
     iq_balance: iqBalance,
     iq_account: iqAccount,
@@ -167,6 +176,12 @@ router.post('/start', async (req, res) => {
     ? req.body.account_type.trim().toUpperCase()
     : (process.env.BOT_ACCOUNT_TYPE || 'PRACTICE');
 
+  // Limites de ganho/perda (R$) que param o bot automaticamente
+  const rawTP = req.body && req.body.take_profit != null ? Number(req.body.take_profit) : NaN;
+  const rawSL = req.body && req.body.stop_loss != null ? Number(req.body.stop_loss) : NaN;
+  currentTakeProfit = Number.isFinite(rawTP) && rawTP > 0 ? rawTP : null;
+  currentStopLoss = Number.isFinite(rawSL) && rawSL > 0 ? rawSL : null;
+
   currentAsset = asset;
   currentAccountType = accountType;
 
@@ -182,6 +197,7 @@ router.post('/start', async (req, res) => {
   } catch (e) {
     // se falhar, mantém o saldo salvo
   }
+  sessionStartBalance = initialSaldo;
 
   try {
     stopTraderFn = await startTrader({
@@ -205,6 +221,26 @@ router.post('/start', async (req, res) => {
         const label = result.status === 'draw' ? 'EMPATE' : (result.win ? 'WIN' : 'LOSS');
         addEvent(label.toLowerCase(),
           `${label} ${result.action} ${result.asset} | R$ ${result.profit.toFixed(2)} | Saldo R$ ${current.saldo.toFixed(2)}`);
+
+        // Verifica limites de ganho/perda e desliga o bot se atingir a meta
+        if (sessionStartBalance != null && (currentTakeProfit != null || currentStopLoss != null)) {
+          const gain = saldoReal - sessionStartBalance;
+          let reason = null;
+          if (currentStopLoss != null && gain <= -currentStopLoss) {
+            reason = `perda de R$ ${Math.abs(gain).toFixed(2)} (limite R$ ${currentStopLoss.toFixed(2)})`;
+          } else if (currentTakeProfit != null && gain >= currentTakeProfit) {
+            reason = `ganho de R$ ${gain.toFixed(2)} (meta R$ ${currentTakeProfit.toFixed(2)})`;
+          }
+          if (reason) {
+            try {
+              if (stopTraderFn) { stopTraderFn(); stopTraderFn = null; }
+            } catch (e) {}
+            rawData.botStatus = 'DESLIGADO';
+            saveData(rawData);
+            addEvent('info', `Bot parado automaticamente: atingiu ${reason}`);
+            console.log('[bot.js] Stop automático:', reason);
+          }
+        }
       },
       onError: (err) => {
         lastEngineError = err && err.message ? err.message : String(err);
@@ -224,7 +260,10 @@ router.post('/start', async (req, res) => {
         addEvent('info', `Ordem aberta: ${ord.direction.toUpperCase()} ${ord.asset} valor=R$${Number(ord.stake).toFixed(2)}`);
       },
       onOrderClosed: (ord) => {
-        currentOrder = null;
+currentOrder = null;
+  currentTakeProfit = null;
+  currentStopLoss = null;
+  sessionStartBalance = null;
       }
     });
 
