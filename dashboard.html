@@ -158,7 +158,7 @@
               : `<span style="color: #F0455C;">● Não conectado</span>`}
           </div>
 
-          <form id="broker-form" style="text-align: left;">
+          <form id="broker-form" style="text-align: left; ${logged ? 'display: none;' : ''}">
             <div>
               <label class="text-sm" style="margin-bottom: 6px;">Corretora</label>
               <select id="broker-select" class="input-field">
@@ -177,6 +177,8 @@
             <div id="broker-error" class="error-box hidden"></div>
             <button type="submit" class="btn btn-green" style="margin-top: 6px;">LOGAR NA CORRETORA</button>
           </form>
+
+          <button id="broker-change" style="width: 100%; padding: 12px; font-weight: bold; font-size: 14px; border-radius: 12px; cursor: pointer; background: transparent; color: #28C77A; border: 1px solid #28C77A; margin-top: 6px; ${logged ? '' : 'display: none;'}">Trocar corretora</button>
         </div>
       `;
     }
@@ -201,6 +203,10 @@
         if (stateEl) {
           stateEl.innerHTML = `<span style="color: #28C77A; font-weight: bold;">● Conectado</span> a <b>${res.broker || broker}</b> (${email})`;
         }
+        const formEl = document.getElementById("broker-form");
+        if (formEl) formEl.style.display = "none";
+        const changeBtn = document.getElementById("broker-change");
+        if (changeBtn) changeBtn.style.display = "";
         const pwEl = document.getElementById("broker-password");
         if (pwEl) pwEl.value = "";
         await loadDashboardData();
@@ -343,6 +349,15 @@
         const brokerForm = document.getElementById("broker-form");
         if (brokerForm) brokerForm.addEventListener("submit", handleBrokerLogin);
 
+        const brokerChange = document.getElementById("broker-change");
+        if (brokerChange) {
+          brokerChange.addEventListener("click", () => {
+            const f = document.getElementById("broker-form");
+            if (f) f.style.display = "";
+            brokerChange.style.display = "none";
+          });
+        }
+
         // Define o par selecionado conforme o pares ativo do servidor
         const pairSelect = document.getElementById("pair-select");
         if (pairSelect && AVAILABLE_PAIRS.includes(status.asset)) {
@@ -425,7 +440,7 @@
     // Inicialização ao carregar a página
     window.addEventListener("DOMContentLoaded", () => {
       if (getToken()) {
-        initDashboard();
+        renderHomeScreen();
       } else {
         renderLoginScreen();
       }
