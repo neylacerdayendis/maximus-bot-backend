@@ -70,8 +70,8 @@ function request(method, path, body, timeoutMs = 30000) {
 }
 
 // Abre uma ordem na corretora (demanda POST /order/buy no serviço Python)
-async function buy(pair, direction, amount, expiration = 1) {
-  return request("POST", "/order/buy", { pair, direction, amount, expiration });
+async function buy(pair, direction, amount, expiration = 1, accountType = "PRACTICE") {
+  return request("POST", "/order/buy", { pair, direction, amount, expiration, account_type: accountType });
 }
 
 // Consulta o resultado de uma ordem expirada (GET /order/result)

@@ -1,7 +1,7 @@
 const { checkSignal } = require("./signal-engine");
 const { buy, getOrderResult } = require("./broker-client");
 
-async function startTrader({ userId, asset, stake, expiration, onResult, onError, minEntryInterval }) {
+async function startTrader({ userId, asset, stake, expiration, accountType, onResult, onError, minEntryInterval }) {
   let active = true;
   let lastEntryAt = 0;
 
@@ -44,7 +44,7 @@ async function startTrader({ userId, asset, stake, expiration, onResult, onError
       console.log(`[Trader User ${userId}] Sinal detectado: ${signal} para ${asset} - abrindo ordem`);
 
       try {
-        const order = await buy(asset, direction, stake, expiration);
+        const order = await buy(asset, direction, stake, expiration, accountType);
         if (!active) return;
         console.log(`[Trader User ${userId}] Ordem aberta id=${order.order_id} (${direction} ${asset} valor=${stake})`);
         settleOrder(order.order_id, direction);

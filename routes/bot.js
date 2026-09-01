@@ -17,6 +17,9 @@ let lastErrorAt = null;
 // Par atualmente ativo (selecionado no painel)
 let currentAsset = process.env.BOT_ASSET || 'EURUSD';
 
+// Conta atualmente ativa (PRACTICE/REAL)
+let currentAccountType = process.env.BOT_ACCOUNT_TYPE || 'PRACTICE';
+
 // Buffer de eventos recentes mostrados no painel (histórico em tempo real)
 const MAX_EVENTS = 50;
 let events = [];
@@ -96,6 +99,7 @@ router.get('/status', (req, res) => {
     current_balance: data.saldo,
     initial_balance: data.initial_balance,
     asset: currentAsset,
+    accountType: currentAccountType,
     broker: {
       broker: broker ? broker.broker : null,
       email: broker ? broker.email : null,
@@ -122,7 +126,13 @@ router.post('/start', async (req, res) => {
   const stake = Number(process.env.BOT_STAKE || 10);
   const expiration = Number(process.env.BOT_EXPIRATION || 1);
 
+  // Conta (practice/real) escolhida no painel
+  const accountType = req.body && typeof req.body.account_type === 'string'
+    ? req.body.account_type.trim().toUpperCase()
+    : (process.env.BOT_ACCOUNT_TYPE || 'PRACTICE');
+
   currentAsset = asset;
+  currentAccountType = accountType;
 
   try {
     stopTraderFn = await startTrader({
@@ -130,6 +140,7 @@ router.post('/start', async (req, res) => {
       asset,
       stake,
       expiration,
+      accountType,
       onResult: (result) => {
         const current = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : {};
         current.wins = (current.wins || 0) + ((result.win && result.status !== 'draw') ? 1 : 0);

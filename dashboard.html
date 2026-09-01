@@ -395,6 +395,11 @@
                 <select id="pair-select" class="pair-select">
                   ${AVAILABLE_PAIRS.map(p => `<option value="${p}" ${(status.asset || '').toUpperCase() === p ? 'selected' : ''}>${p}</option>`).join("")}
                 </select>
+                <label for="account-select" style="margin-left:12px;">Conta</label>
+                <select id="account-select" class="pair-select">
+                  <option value="PRACTICE" ${(status.accountType || 'PRACTICE') === 'PRACTICE' ? 'selected' : ''}>PRACTICE (Demo)</option>
+                  <option value="REAL" ${status.accountType === 'REAL' ? 'selected' : ''}>REAL</option>
+                </select>
                 <span class="pair-hint">pares -OTC ficam abertos 24h</span>
               </div>
             </div>
@@ -469,7 +474,7 @@
       const msg = ev.message || '';
       const labelM = msg.match(/^(WIN|LOSS|EMPATE)\s+(call|put)\s+([A-Z0-9-]+)\s*\|\s*R\$\s*([\d,.]+)/i);
       if (!labelM) return;
-      const profit = parseFloat(labelM[4].replace(/\./g, '').replace(',', '.'));
+      const profit = parseFloat(labelM[4]);
       ops.push({
         time: ev.time,
         asset: labelM[3],
@@ -519,6 +524,10 @@
       if (!running && status.asset && AVAILABLE_PAIRS.includes(status.asset.toUpperCase())) {
         pairSelect.value = status.asset.toUpperCase();
       }
+    }
+    const accountSelect = document.getElementById("account-select");
+    if (accountSelect) {
+      accountSelect.disabled = !!running;
     }
 
     document.getElementById("val-balance").textContent = `R$ ${Number(status.current_balance).toFixed(2)}`;
@@ -599,8 +608,11 @@
       const isRunning = statusData.running === true || statusData.status === 'LIGADO' || statusData.running === 'true';
       const path = isRunning ? "/stop" : "/start";
       const select = document.getElementById("pair-select");
+      const accountSelect = document.getElementById("account-select");
       const selectedPair = select ? select.value : undefined;
-      await apiFetch(path, { method: "POST", token, body: path === "/start" && selectedPair ? { asset: selectedPair } : undefined });
+      const accountType = accountSelect ? accountSelect.value : "PRACTICE";
+      const body = path === "/start" ? { asset: selectedPair, account_type: accountType } : undefined;
+      await apiFetch(path, { method: "POST", token, body });
       await loadDashboardData();
     } catch (err) { alert("Erro ao alterar o bot: " + err.message); }
   }
